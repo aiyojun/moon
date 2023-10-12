@@ -1,0 +1,284 @@
+{
+  "start": 0,
+  "end": 219,
+  "type": "Program",
+  "body": [
+    {
+      "start": 0,
+      "end": 219,
+      "type": "FunctionDeclaration",
+      "id": {
+        "start": 4,
+        "end": 7,
+        "type": "Identifier",
+        "name": "main"
+      },
+      "params": [
+        {
+          "start": 9,
+          "end": 12,
+          "type": "Identifier",
+          "name": "argc"
+        },
+        {
+          "start": 15,
+          "end": 18,
+          "type": "Identifier",
+          "name": "argv"
+        }
+      ],
+      "body": {
+        "start": 21,
+        "end": 219,
+        "type": "BlockStatement",
+        "body": [
+          {
+            "start": 27,
+            "end": 51,
+            "type": "AssignmentExpression",
+            "operator": "=",
+            "left": {
+              "start": 27,
+              "end": 27,
+              "type": "Identifier",
+              "name": "a"
+            },
+            "right": {
+              "start": 31,
+              "end": 51,
+              "type": "BinaryExpression",
+              "operator": "+",
+              "left": {
+                "start": 31,
+                "end": 32,
+                "type": "Literal",
+                "value": 12
+              },
+              "right": {
+                "start": 36,
+                "end": 51,
+                "type": "BinaryExpression",
+                "operator": "*",
+                "left": {
+                  "start": 36,
+                  "end": 46,
+                  "type": "CallExpression",
+                  "callee": {
+                    "start": 36,
+                    "end": 38,
+                    "type": "Identifier",
+                    "name": "add"
+                  },
+                  "arguments": [
+                    {
+                      "start": 40,
+                      "end": 41,
+                      "type": "Literal",
+                      "value": 32
+                    },
+                    {
+                      "start": 44,
+                      "end": 45,
+                      "type": "Literal",
+                      "value": 12
+                    }
+                  ]
+                },
+                "right": {
+                  "start": 50,
+                  "end": 51,
+                  "type": "Literal",
+                  "value": 43
+                }
+              }
+            }
+          },
+          {
+            "start": 58,
+            "end": 170,
+            "type": "IfStatement",
+            "test": {
+              "start": 62,
+              "end": 66,
+              "type": "BinaryExpression",
+              "operator": "<",
+              "left": {
+                "start": 62,
+                "end": 62,
+                "type": "Identifier",
+                "name": "a"
+              },
+              "right": {
+                "start": 66,
+                "end": 66,
+                "type": "Literal",
+                "value": 0
+              }
+            },
+            "consequent": {
+              "start": 69,
+              "end": 94,
+              "type": "BlockStatement",
+              "body": [
+                {
+                  "start": 79,
+                  "end": 87,
+                  "type": "AssignmentExpression",
+                  "operator": "=",
+                  "left": {
+                    "start": 79,
+                    "end": 79,
+                    "type": "Identifier",
+                    "name": "a"
+                  },
+                  "right": {
+                    "start": 83,
+                    "end": 87,
+                    "type": "BinaryExpression",
+                    "operator": "+",
+                    "left": {
+                      "start": 83,
+                      "end": 83,
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "right": {
+                      "start": 87,
+                      "end": 87,
+                      "type": "Identifier",
+                      "name": "a"
+                    }
+                  }
+                }
+              ]
+            },
+            "alternate": {
+              "type": "IfStatement",
+              "test": {
+                "start": 105,
+                "end": 110,
+                "type": "BinaryExpression",
+                "operator": "==",
+                "left": {
+                  "start": 105,
+                  "end": 105,
+                  "type": "Identifier",
+                  "name": "a"
+                },
+                "right": {
+                  "start": 110,
+                  "end": 110,
+                  "type": "Literal",
+                  "value": 0
+                }
+              },
+              "consequent": {
+                "start": 113,
+                "end": 137,
+                "type": "BlockStatement",
+                "body": [
+                  {
+                    "start": 123,
+                    "end": 130,
+                    "type": "CallExpression",
+                    "callee": {
+                      "start": 123,
+                      "end": 127,
+                      "type": "Identifier",
+                      "name": "print"
+                    },
+                    "arguments": [
+                      {
+                        "start": 129,
+                        "end": 129,
+                        "type": "Identifier",
+                        "name": "a"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "alternate": {
+                "start": 144,
+                "end": 170,
+                "type": "BlockStatement",
+                "body": [
+                  {
+                    "start": 154,
+                    "end": 163,
+                    "type": "AssignmentExpression",
+                    "operator": "=",
+                    "left": {
+                      "start": 154,
+                      "end": 154,
+                      "type": "Identifier",
+                      "name": "a"
+                    },
+                    "right": {
+                      "start": 158,
+                      "end": 163,
+                      "type": "BinaryExpression",
+                      "operator": "-",
+                      "left": {
+                        "start": 158,
+                        "end": 158,
+                        "type": "Identifier",
+                        "name": "a"
+                      },
+                      "right": {
+                        "start": 162,
+                        "end": 163,
+                        "type": "Literal",
+                        "value": 10
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "start": 177,
+            "end": 200,
+            "type": "WhileStatement",
+            "test": {
+              "start": 184,
+              "end": 184,
+              "type": "Literal",
+              "value": 1
+            },
+            "body": {
+              "start": 187,
+              "end": 200,
+              "type": "BlockStatement",
+              "body": []
+            }
+          },
+          {
+            "start": 205,
+            "end": 216,
+            "type": "ReturnStatement",
+            "argument": {
+              "start": 212,
+              "end": 216,
+              "type": "BinaryExpression",
+              "operator": "+",
+              "left": {
+                "start": 212,
+                "end": 212,
+                "type": "Identifier",
+                "name": "a"
+              },
+              "right": {
+                "start": 216,
+                "end": 216,
+                "type": "Literal",
+                "value": 5
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
