@@ -23,6 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+package-lock.json
+
 MoonTypescript/src/parser
 cmake-build-release
 MoonCpp/include
