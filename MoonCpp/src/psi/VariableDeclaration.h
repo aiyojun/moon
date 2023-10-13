@@ -1,0 +1,10 @@
+#ifndef MOONCPP_VARIABLEDECLARATION_H
+#define MOONCPP_VARIABLEDECLARATION_H
+
+
+class VariableDeclaration {
+
+};
+
+
+#endif //MOONCPP_VARIABLEDECLARATION_H
