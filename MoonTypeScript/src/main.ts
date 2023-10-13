@@ -1,14 +1,11 @@
-import {ASTBuilder} from "./moon/ast.js";
-import {Interpreter} from "./moon/interpreter.js";
+import {MoonScriptEngine} from "./moon/engine.js";
 
-const input = `
+const text = `
 def main(argc, argv) {
     println("Hello World! Nice to meet you! I'm Moon~");
     return 0;
 }
 `
-const builder = new ASTBuilder()
-const interpreter = new Interpreter()
-builder.compile(input)
-interpreter.load(builder.psi())
-interpreter.run()
+new MoonScriptEngine()
+    .compile(text)
+    .run()

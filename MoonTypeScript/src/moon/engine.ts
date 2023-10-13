@@ -9,21 +9,12 @@ import {
 } from "./psi.js";
 import {Evaluator} from "./eval.js";
 import {VirtualMachine} from "./vm.js";
-// Moon Engine
-// VirtualMachine VirtualEngine BytecodeEngine
-// Scope Field
-// Builtin Provider BuiltinFunction
-// Environment Context
-// System Type ClassLoader
-// GarbageCollector ObjectManager
-// GIL GIR
-// Call Stack
-// record register
+import {PsiBuilder} from "./ast";
 
-// Moon -> Interpreter -> VirtualMachine -> BytecodeEngine
+// Moon -> Engine -> VirtualMachine -> BytecodeGenerator
 // TODO: builtin registering mechanism
 
-export class BuiltinFunction {
+export class BuiltinProvider {
     constructor(readonly name: string, readonly impl: Function) {
 
     }
@@ -31,11 +22,11 @@ export class BuiltinFunction {
 
 // callstack point
 export class StkPt {
-    element: PsiElement
-    identifiers: Map<string, any> = new Map
+    el: PsiElement
+    sblTbl: Map<string, any> = new Map
 
     constructor(el: PsiElement) {
-        this.element = el
+        this.el = el
     }
 }
 
@@ -67,7 +58,7 @@ export class Pt {
     }
 }
 
-export class ScopeProvider {
+export class Runtime {
     // save identifier and its value
     private _callstack: Array<StkPt> = []
 
@@ -77,7 +68,7 @@ export class ScopeProvider {
 
     record(id: string, entity: any) {
         const _refs = this.ref(id)
-        _refs !== null ? _refs.set(id, entity) : this._callstack[this._callstack.length - 1].identifiers.set(id, entity)
+        _refs !== null ? _refs.set(id, entity) : this._callstack[this._callstack.length - 1].sblTbl.set(id, entity)
     }
 
     exchange(id: Identifier) {
@@ -101,8 +92,8 @@ export class ScopeProvider {
     ref(id: string) {
         let index = this._callstack.length - 1
         while (index > -1) {
-            if (this._callstack[index].identifiers.has(id))
-                return this._callstack[index].identifiers
+            if (this._callstack[index].sblTbl.has(id))
+                return this._callstack[index].sblTbl
             index--
         }
         return null
@@ -118,57 +109,34 @@ export class ScopeProvider {
     }
 }
 
-export class Interpreter {
+export class MoonScriptEngine {
     private _program: Program = null
 
     private _classes: Map<string, ClassDeclaration> = new Map
 
-    // private _functions: Map<string, FunctionDeclaration> = new Map
-    //
-    // private _variables: Map<string, VariableDeclaration> = new Map
-    //
-    // private _builtin: BuiltinProvider = new BuiltinProvider()
+    private _builder: PsiBuilder = new PsiBuilder()
 
-    private _scopeProvider: ScopeProvider = new ScopeProvider()
+    private _runtime: Runtime = new Runtime()
 
     private readonly _evaluator: Evaluator
 
-    private _vm: VirtualMachine
+    private readonly _vm: VirtualMachine
 
     constructor() {
-        this._evaluator = new Evaluator(this._scopeProvider)
-        this._vm = new VirtualMachine(this._evaluator)
+        this._evaluator = new Evaluator(this)
+        this._vm = new VirtualMachine(this)
     }
 
-    callstack() { return this._scopeProvider }
-
-    load(p: Program) {
-        this._program = p
-        this._program.body.forEach(decl => {
-            if (decl instanceof ClassDeclaration) {
-                this._classes.set(decl.id.name, decl)
-                return
-            }
-            if (decl instanceof VariableDeclaration) {
-                this._scopeProvider.record(decl.id.name, decl)
-                // this._variables.set(decl.id.name, decl)
-                return
-            }
-            if (decl instanceof FunctionDeclaration) {
-                this._scopeProvider.record(decl.id.name, decl)
-                // this._functions.set(decl.id.name, decl)
-                return
-            }
-        })
-        const println = new BuiltinFunction("println", (...args) => {
-            let stream = ''
-            for (let i = 0; i < args.length; i++) {
-                stream += `${args[i]}`
-            }
-            console.info("%c[MOON]", "color: #88cc88", `${stream}`)
-        })
-        this._scopeProvider.record(println.name, println)
+    compile(program: string) {
+        this.load(this._builder.compile(program).program())
+        return this
     }
+
+    vm() { return this._vm }
+
+    runtime() { return this._runtime }
+
+    evaluator() { return this._evaluator }
 
     run() {
         const _main = new CallExpression()
@@ -191,6 +159,34 @@ export class Interpreter {
             buffer += `  }`
         })
         return buffer
+    }
+
+    private load(p: Program) {
+        this._program = p
+        this._program.body.forEach(decl => {
+            if (decl instanceof ClassDeclaration) {
+                this._classes.set(decl.id.name, decl)
+                return
+            }
+            if (decl instanceof VariableDeclaration) {
+                this._runtime.record(decl.id.name, decl)
+                return
+            }
+            if (decl instanceof FunctionDeclaration) {
+                this._runtime.record(decl.id.name, decl)
+                this._vm.compile(decl)
+                return
+            }
+        })
+        const println = new BuiltinProvider("println", (...args) => {
+            let stream = ''
+            for (let i = 0; i < args.length; i++) {
+                stream += `${args[i]}`
+            }
+            console.info("%c[MOON]", "color: #88cc88", `${stream}`)
+        })
+        this._runtime.record(println.name, println)
+        return this
     }
 }
 

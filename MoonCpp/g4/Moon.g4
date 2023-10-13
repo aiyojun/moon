@@ -37,13 +37,21 @@ statements
     | ifStatement
     | forStatement
     | whileStatement
+    | tryStatement
     | returnStatement SEMI
     | continueStatement SEMI
     | breakStatement SEMI
+    | throwStatement SEMI
     | blockStatement
     | SEMI
     ;
 blockStatement: '{' (statements | ) '}';
+
+
+tryStatement: 'try' blockStatement (catchClause finallyClause | catchClause | finallyClause);
+catchClause: 'catch' '(' ID ')' blockStatement;
+finallyClause: 'finally' blockStatement;
+throwStatement: 'throw' expression;
 
 
 ifStatement: multiIfStatement elseStatement;

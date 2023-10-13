@@ -66,10 +66,14 @@ export class MoonLexerErrorListener extends ErrorListener<Token> {
     }
 }
 
-export class ASTBuilder {
-    private _ASTJson: Program = null
+// TODO:
+// export class PsiAnalyzer {}
+// export class PsiOptimizer {}
 
-    psi() { return this._ASTJson }
+export class PsiBuilder {
+    private _program: Program = null
+
+    program() { return this._program }
 
     compile(input: string) {
         const chars = new CharStream(input);
@@ -80,10 +84,11 @@ export class ASTBuilder {
         parser.addErrorListener(new MoonLexerErrorListener())
         try {
             const tree = parser.program();
-            this._ASTJson = this.handleProgram(tree)
+            this._program = this.handleProgram(tree)
         } catch (e) {
             console.error(e)
         }
+        return this
     }
 
     handleProgram(program: ParseTree) {

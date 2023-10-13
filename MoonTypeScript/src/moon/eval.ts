@@ -19,11 +19,10 @@ import {
     isString
 } from "./psiutils.js";
 import {handle} from "./hdl.js";
-import {BuiltinFunction, ScopeProvider, Pt} from "./interpreter.js";
-import {VirtualMachine} from "./vm.js";
+import {BuiltinProvider, Pt, MoonScriptEngine} from "./engine.js";
 
 export class Evaluator {
-    constructor(private readonly callstack: ScopeProvider) {
+    constructor(private readonly engine: MoonScriptEngine) {
 
     }
 
@@ -78,7 +77,7 @@ export class Evaluator {
         )
         const _r = stack.pop()
         if (_r instanceof Identifier) {
-            return Literal.build(this.callstack.exchange(_r))
+            return Literal.build(this.engine.runtime().exchange(_r))
         } else if (_r instanceof Literal) {
             return _r
         } else {
@@ -87,7 +86,7 @@ export class Evaluator {
     }
 
     private evalAssignmentExpression(left: Identifier, right): Literal {
-        const callstack = this.callstack
+        const callstack = this.engine.runtime()
         const r = this.evaluate(right)
         callstack.record(left.name, r?.value)
         return r
@@ -98,7 +97,7 @@ export class Evaluator {
         if (!isIdentifier(callee))
             this.reportException(`${callee.dumps()} is not callable!`)
         const functionName = (callee as Identifier).name
-        const callstack = this.callstack
+        const callstack = this.engine.runtime()
         const refs = callstack.ref(functionName)
         if (refs === null)
             throw new Error(`error: no such function ${functionName}`)
@@ -109,17 +108,17 @@ export class Evaluator {
             const fnDecl = refs.get(functionName)
             callstack.push(Pt.call(fnDecl))
             fnDecl.params.forEach((param, i) => callstack.record(param.name, rArgs[i]))
-            const _r = new VirtualMachine(this).build(func).jit()
+            const _r = this.engine.vm().compile(func).invoke(func)
             callstack.pop()
             return _r
-        } else if (func instanceof BuiltinFunction) {
+        } else if (func instanceof BuiltinProvider) {
             return Literal.build(func.impl(...rArgs.map(arg => arg.value)))
         }
     }
 
     private evalUnaryExpression(expr: UnaryExpression, e: Literal | Identifier): Literal {
         const op = expr.operator
-        const ev = e instanceof Identifier ? Literal.build(this.callstack.exchange(e)) : e
+        const ev = e instanceof Identifier ? Literal.build(this.engine.runtime().exchange(e)) : e
         return handle([
             {match: () => (isFlatNumber(ev) || isNull(ev)) && op === '!', apply: () => Literal.build(! ev.value)},
             {match: () => isFlatNumber(ev) && op === '~', apply: () => Literal.build(~ ev.value)},
@@ -131,8 +130,8 @@ export class Evaluator {
 
     private evalBinaryExpression(expr: BinaryExpression, left: Literal | Identifier, right: Literal | Identifier): Literal {
         const op = expr.operator
-        const lv = left  instanceof Identifier ? Literal.build(this.callstack.exchange(left))  : left
-        const rv = right instanceof Identifier ? Literal.build(this.callstack.exchange(right)) : right
+        const lv = left  instanceof Identifier ? Literal.build(this.engine.runtime().exchange(left))  : left
+        const rv = right instanceof Identifier ? Literal.build(this.engine.runtime().exchange(right)) : right
         return handle([
             {match: () => isNumber(lv) && isNumber(rv) && op === '+', apply: () => Literal.build(lv.value + rv.value)},
             {match: () => isNumber(lv) && isNumber(rv) && op === '-', apply: () => Literal.build(lv.value - rv.value)},

@@ -12,6 +12,7 @@ import {
     WhileStatement, Literal
 } from "./psi.js";
 import {Evaluator} from "./eval.js";
+import {MoonScriptEngine} from "./engine.js";
 
 // here, build linear bytecode
 // build code flow by psi(function&statement)
@@ -81,24 +82,34 @@ export class BtcMark extends Bytecode {
     }
 }
 
-export class VirtualMachine {
+export class BytecodeCompiler {
     private _bytecodes: Bytecode[] = []
 
     private _stack: Record<string, any>[] = []
 
-    private _used: Map<string, number> = new Map
-
-    private _csip: number
+    private _theUsedLblIdx: Map<string, number> = new Map
 
     private static _lblCount: number = 0
 
-    constructor(readonly evaluator: Evaluator) {
+    private _csip: number
 
+    constructor(readonly evaluator: Evaluator) {
     }
 
     bytecode(): Bytecode[] { return this._bytecodes }
 
-    jit(): Literal {
+
+    compile(func: FunctionDeclaration) {
+        const [lc_0] = this.lbl()
+        this._stack.push({type: 'function', end: lc_0})
+        this._block(func.body)
+        this._mark(lc_0)
+        this._stack.pop()
+        this.optimize()
+        return this
+    }
+
+    interpret(): Literal { // jit
         this._csip = -1
         while (1) {
             const btc = this.next()
@@ -111,7 +122,7 @@ export class VirtualMachine {
             if (btc instanceof BtcTest) {
                 const r = this.evaluator.evaluate(btc.expression)
                 if (!r.value) {
-                    this._csip = this._used.get(btc.tag)
+                    this._csip = this._theUsedLblIdx.get(btc.tag)
                 }
                 continue
             }
@@ -134,7 +145,7 @@ export class VirtualMachine {
             if (btc instanceof BtcMark)
                 continue
             if (btc instanceof BtcGoto) {
-                this._csip = this._used.get(btc.tag)
+                this._csip = this._theUsedLblIdx.get(btc.tag)
                 continue
             }
             break
@@ -142,24 +153,16 @@ export class VirtualMachine {
         return btc
     }
 
-    build(func: FunctionDeclaration) {
-        const [lc_0] = this.lbl()
-        this._stack.push({type: 'function', end: lc_0})
-        this._block(func.body)
-        this._mark(lc_0)
-        this._stack.pop()
-        this.optimize()
-        return this
-    }
-
     private optimize() {
-        // TODO: more optimization: remove useless label
+        // TODO: more optimization:
+        //       1. remove useless label
+        //       2. optimize code flow
         const _r: Bytecode[] = []
         for (const bc of this._bytecodes) {
-            if (bc instanceof BtcMark && !this._used.has(bc.tag))
+            if (bc instanceof BtcMark && !this._theUsedLblIdx.has(bc.tag))
                 continue
-            if (bc instanceof BtcMark && this._used.has(bc.tag)) {
-                this._used.set(bc.tag, _r.length)
+            if (bc instanceof BtcMark && this._theUsedLblIdx.has(bc.tag)) {
+                this._theUsedLblIdx.set(bc.tag, _r.length)
             }
             _r.push(bc)
         }
@@ -251,7 +254,7 @@ export class VirtualMachine {
     }
 
     private _test(another: string, expr: Expression) {
-        this._used.set(another, -1)
+        this._theUsedLblIdx.set(another, -1)
         this.append(BtcTest.build(expr, another))
     }
 
@@ -260,7 +263,7 @@ export class VirtualMachine {
     }
 
     private _goto(lc: string) {
-        this._used.set(lc, -1)
+        this._theUsedLblIdx.set(lc, -1)
         this.append(BtcGoto.build(lc))
     }
 
@@ -286,7 +289,7 @@ export class VirtualMachine {
         const _r: string[] = []
         let i: number = 0
         while (i < n) {
-            _r.push(`.LC${VirtualMachine._lblCount++}`)
+            _r.push(`.LC${BytecodeCompiler._lblCount++}`)
             i++
         }
         return _r
@@ -294,5 +297,23 @@ export class VirtualMachine {
 
     private append(bytecode: Bytecode) {
         this._bytecodes.push(bytecode)
+    }
+}
+
+export class VirtualMachine {
+    private _btc: Map<FunctionDeclaration, BytecodeCompiler> = new Map
+
+    constructor(private engine: MoonScriptEngine) {
+
+    }
+
+    compile(func: FunctionDeclaration) {
+        if (this._btc.has(func)) return this
+        this._btc.set(func, new BytecodeCompiler(this.engine.evaluator()).compile(func))
+        return this
+    }
+
+    invoke(func: FunctionDeclaration): Literal {
+        return this._btc.get(func).interpret()
     }
 }
