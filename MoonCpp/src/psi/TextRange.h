@@ -3,9 +3,9 @@
 
 class TextRange {
 public:
-    int line;
-    int start;
-    int end;
+    size_t line;
+    size_t start;
+    size_t end;
 };
 
 #endif //MOONCPP_TEXTRANGE_H

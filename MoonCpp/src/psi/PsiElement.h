@@ -5,6 +5,9 @@
 #include <string>
 
 #include "TextRange.h"
+#include "antlr4-runtime.h"
+
+using antlr4::tree::ParseTree;
 
 class PsiElement {
 public:
@@ -16,7 +19,7 @@ public:
 
     PsiElement *relate(PsiElement *p);
 
-    PsiElement *loc(int line, int start, int end);
+    PsiElement *loc(ParseTree* tree);
 
     virtual std::string toString() { return ""; };
 

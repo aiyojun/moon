@@ -7,8 +7,8 @@ import {
     TerminalNode,
     Token,
 } from 'antlr4';
-import MoonLexerLexer from '../parser/MoonLexer.js';
-import MoonLexerParser, {
+import MoonLexer from '../parser/MoonLexer.js';
+import MoonParser, {
     AccessExpressionContext,
     ArgumentsContext,
     BlockStatementContext,
@@ -77,9 +77,9 @@ export class PsiBuilder {
 
     compile(input: string) {
         const chars = new CharStream(input);
-        const lexer = new MoonLexerLexer(chars);
+        const lexer = new MoonLexer(chars);
         const tokens = new CommonTokenStream(lexer);
-        const parser = new MoonLexerParser(tokens);
+        const parser = new MoonParser(tokens);
         parser.removeErrorListeners()
         parser.addErrorListener(new MoonLexerErrorListener())
         try {
@@ -96,10 +96,10 @@ export class PsiBuilder {
         this.handleParseTree(program,
                 tree => {
                     if (tree instanceof ClassDeclarationContext) {
-                        const identifiers = this.findTerminals(tree.children, MoonLexerLexer.ID)
+                        const identifiers = this.findTerminals(tree.children, MoonLexer.ID)
                         const classDeclaration = new ClassDeclaration()
                         classDeclaration.id = this.handleIdentifier(identifiers[0])
-                        this.unfoldMembers(this.findFirstParserRule(tree.children, MoonLexerParser.RULE_members))
+                        this.unfoldMembers(this.findFirstParserRule(tree.children, MoonParser.RULE_members))
                             .forEach(member =>
                                 member instanceof VariableDeclaration
                                     ? classDeclaration.variables.push(member)
@@ -139,7 +139,7 @@ export class PsiBuilder {
     }
 
     handleFunctionDeclaration(tree: FunctionDeclarationContext): FunctionDeclaration {
-        const params = this.findFirstParserRule(tree.children, MoonLexerParser.RULE_params)
+        const params = this.findFirstParserRule(tree.children, MoonParser.RULE_params)
         const f = new FunctionDeclaration().loc(this.location(tree))
         f.id = this.handleIdentifier(tree.children[1] as TerminalNode)
         f.params = (params !== null ? this.unfoldParams(params) : []).map(p => p.relate(f))
@@ -170,7 +170,7 @@ export class PsiBuilder {
     }
 
     handleForStatement(tree: ForStatementContext): LoopStatement {
-        const semi = this.indexOfTerminals(tree.children, MoonLexerLexer.SEMI)
+        const semi = this.indexOfTerminals(tree.children, MoonLexer.SEMI)
         const isNumeric = semi.length > 0
         if (isNumeric) {
             const l = new ForStatement().loc(this.location(tree))
@@ -227,7 +227,7 @@ export class PsiBuilder {
         if (tree.children[0] instanceof TerminalNode && tree.children[0].getText() === '(') {
             let obj: Expression = this.handleExpression(tree.children[1] as ExpressionContext)
             const last = tree.children[tree.children.length - 1] as any
-            if (last.ruleIndex && last.ruleIndex === MoonLexerParser.RULE_accessExpression) {
+            if (last.ruleIndex && last.ruleIndex === MoonParser.RULE_accessExpression) {
                 obj = this.handleAccessExpression(obj, last)
             }
             return obj.loc(this.location(tree))
@@ -235,15 +235,15 @@ export class PsiBuilder {
         if (tree.children[0] instanceof TerminalNode && tree.children[0].getText() === 'new') {
             let obj = this.handleNewExpression(tree.children[1] as TerminalNode, [])
             const last = tree.children[tree.children.length - 1] as any
-            if (last.ruleIndex && last.ruleIndex === MoonLexerParser.RULE_accessExpression) {
+            if (last.ruleIndex && last.ruleIndex === MoonParser.RULE_accessExpression) {
                 obj = this.handleAccessExpression(obj, last)
             }
             return obj.loc(this.location(tree))
         }
-        if (tree.children[0] instanceof TerminalNode && tree.children[0].symbol.type === MoonLexerLexer.ID) {
+        if (tree.children[0] instanceof TerminalNode && tree.children[0].symbol.type === MoonLexer.ID) {
             let obj = this.handleIdentifier(tree.children[0])
             const last = tree.children[tree.children.length - 1] as any
-            if (last.ruleIndex && last.ruleIndex === MoonLexerParser.RULE_accessExpression) {
+            if (last.ruleIndex && last.ruleIndex === MoonParser.RULE_accessExpression) {
                 obj = this.handleAccessExpression(obj, last)
             }
             return obj.loc(this.location(tree))
@@ -348,18 +348,18 @@ export class PsiBuilder {
     }
 
     handleTerminal(tree: TerminalNode) {
-        if (tree.symbol.type === MoonLexerLexer.ID)
+        if (tree.symbol.type === MoonLexer.ID)
             return Identifier.build(tree.getText()).loc(this.location(tree))
             // return {...this.location(tree), type: "Identifier", name: tree.getText()}
-        if (tree.symbol.type === MoonLexerLexer.NUMBER)
+        if (tree.symbol.type === MoonLexer.NUMBER)
             return Literal.build(parseFloat(tree.getText())).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexerLexer.HEX)
+        if (tree.symbol.type === MoonLexer.HEX)
             return Literal.build(parseInt(tree.getText(), 16)).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexerLexer.OCT)
+        if (tree.symbol.type === MoonLexer.OCT)
             return Literal.build(parseInt(tree.getText(), 8)).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexerLexer.BIN)
+        if (tree.symbol.type === MoonLexer.BIN)
             return Literal.build(parseInt(tree.getText(), 2)).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexerLexer.STRING)
+        if (tree.symbol.type === MoonLexer.STRING)
             return Literal.build(extractString(tree.getText())).loc(this.location(tree))
         if (tree.getText() === 'true')
             return Literal.build(true).loc(this.location(tree))

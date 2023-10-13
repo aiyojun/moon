@@ -4,11 +4,12 @@ project(MoonCpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include include/antlr4-runtime gen)
+include_directories(include include/antlr4-runtime src/parser)
 
 add_executable(moonc
     src/main.cpp
     src/psi/PsiElement.cpp
+    src/psi/Identifier.cpp
     src/psi/BinaryExpression.cpp
     src/psi/UnaryExpression.cpp
     src/psi/CallExpression.cpp
@@ -25,6 +26,9 @@ add_executable(moonc
     src/psi/CatchStatement.cpp
     src/psi/ThrowStatement.cpp
     src/psi/PsiBuilder.cpp
+    src/psi/ParseTreeTraverser.cpp
+    src/psi/PsiUtils.cpp
+    src/psi/Literal.cpp
 )
 
 target_link_libraries(moonc lib/x64/antlr4-runtime.lib)

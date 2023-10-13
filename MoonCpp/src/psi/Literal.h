@@ -1,14 +1,18 @@
 #ifndef MOONCPP_LITERAL_H
 #define MOONCPP_LITERAL_H
 
-#include "Expression.h"
+#include "TerminalExpression.h"
+#include "PsiUtils.h"
+#include <any>
 
-class Literal : public Expression {
+class Literal : public TerminalExpression {
 public:
-    std::string toString() override {return _value;}
+    std::string toString() override {return any_cast<std::string>(_value);}
+
+    static Literal* build(TerminalNode* term);
 
 private:
-    std::string _value;
+    std::any _value;
 };
 
 

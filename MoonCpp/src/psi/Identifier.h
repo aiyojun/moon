@@ -1,9 +1,9 @@
 #ifndef MOONCPP_IDENTIFIER_H
 #define MOONCPP_IDENTIFIER_H
 
-#include "Expression.h"
+#include "TerminalExpression.h"
 
-class Identifier : public Expression {
+class Identifier : public TerminalExpression {
 public:
     void setName(const std::string& name) {_name = name;}
 
@@ -11,9 +11,10 @@ public:
 
     std::string toString() override {return _name;}
 
+    static Identifier* build(const std::string& name);
+
 private:
     std::string _name;
 };
-
 
 #endif //MOONCPP_IDENTIFIER_H
