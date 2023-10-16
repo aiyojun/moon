@@ -2,15 +2,15 @@
 #define MOONCPP_PROGRAM_H
 
 #include "PsiElement.h"
-#include "Declaration.h"
+
+class Declaration;
 
 class Program : public PsiElement {
 public:
-    std::vector<Declaration*>& getbody() {return _body;}
+    std::vector<Declaration *> &getBody() { return _body; }
 
 private:
-    std::vector<Declaration*> _body;
+    std::vector<Declaration *> _body;
 };
-
 
 #endif //MOONCPP_PROGRAM_H

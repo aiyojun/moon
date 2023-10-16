@@ -20,11 +20,11 @@ public:
     BlockStatement* getFinalizer() {return _finalizer;}
 
 private:
-    BlockStatement* _block;
+    BlockStatement* _block = nullptr;
 
-    CatchStatement* _handler;
+    CatchStatement* _handler = nullptr;
 
-    BlockStatement* _finalizer;
+    BlockStatement* _finalizer = nullptr;
 };
 
 

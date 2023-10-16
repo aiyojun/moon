@@ -5,10 +5,10 @@
 
 class BlockStatement : public Statement {
 public:
-    std::vector<Statement*>& getBody() {return _body;}
+    std::vector<Statement *> &getBody() { return _body; }
 
 private:
-    std::vector<Statement*> _body;
+    std::vector<Statement *> _body;
 };
 
 

@@ -4,7 +4,7 @@ project(MoonCpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include include/antlr4-runtime src/parser)
+include_directories(include include/antlr4-runtime src/parser src/base src/psi)
 
 add_executable(moonc
     src/main.cpp
@@ -13,6 +13,7 @@ add_executable(moonc
     src/psi/BinaryExpression.cpp
     src/psi/UnaryExpression.cpp
     src/psi/CallExpression.cpp
+    src/psi/NewExpression.cpp
     src/psi/AssignmentExpression.cpp
     src/psi/MemberExpression.cpp
     src/psi/ClassDeclaration.cpp
@@ -29,7 +30,21 @@ add_executable(moonc
     src/psi/ParseTreeTraverser.cpp
     src/psi/PsiUtils.cpp
     src/psi/Literal.cpp
+    src/base/MoonScriptEngine.cpp
+    src/base/BytecodeCompiler.cpp
+    src/base/Evaluator.cpp
+    src/base/Runtime.cpp
+    src/base/VirtualMachine.cpp
+    src/parser/MoonLexer.cpp
+    src/parser/MoonParser.cpp
+    src/parser/MoonListener.cpp
+    src/parser/MoonVisitor.cpp
+        src/types.h
+        src/psi/PsiElementTraverser.cpp
+        src/psi/PsiElementTraverser.h
+        src/base/PsiElementEvaluation.cpp
+        src/base/PsiElementEvaluation.h
 )
 
-target_link_libraries(moonc lib/x64/antlr4-runtime.lib)
+target_link_libraries(moonc C:/Users/jun.dai/Documents/GitHub/moon/MoonCpp/lib/x64/antlr4-runtime.lib)
 

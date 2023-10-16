@@ -7,24 +7,24 @@
 
 class IfStatement : public Statement {
 public:
-    void setTest(Expression* e);
+    void setTest(Expression *e);
 
-    void setConsequent(BlockStatement* s);
+    void setConsequent(BlockStatement *s);
 
-    void setAlternate(Statement* s);
+    void setAlternate(Statement *s);
 
-    Expression* getTest() {return _test;}
+    Expression *getTest() { return _test; }
 
-    BlockStatement* getConsequent() {return _consequent;}
+    BlockStatement *getConsequent() { return _consequent; }
 
-    Statement* getAlternate() {return _alternate;}
+    Statement *getAlternate() { return _alternate; }
 
 private:
-    Expression* _test;
+    Expression *_test = nullptr;
 
-    BlockStatement* _consequent;
+    BlockStatement *_consequent = nullptr;
 
-    Statement* _alternate;
+    Statement *_alternate = nullptr;
 };
 
 

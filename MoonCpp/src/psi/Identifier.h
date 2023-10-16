@@ -5,13 +5,13 @@
 
 class Identifier : public TerminalExpression {
 public:
-    void setName(const std::string& name) {_name = name;}
+    void setName(const std::string &name) { _name = name; }
 
-    const std::string& getName() {return _name;}
+    const std::string &getName() { return _name; }
 
-    std::string toString() override {return _name;}
+    std::string toString() override { return _name; }
 
-    static Identifier* build(const std::string& name);
+    static Identifier *build(const std::string &name);
 
 private:
     std::string _name;

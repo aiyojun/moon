@@ -25,7 +25,7 @@ private:
 
     std::string _operator;
 
-    Expression *_argument;
+    Expression *_argument = nullptr;
 };
 
 

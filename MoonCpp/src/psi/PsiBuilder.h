@@ -8,6 +8,7 @@
 #include "MoonLexer.h"
 #include "VariableDeclaration.h"
 #include "FunctionDeclaration.h"
+#include "Statements.h"
 #include "IfStatement.h"
 #include "WhileStatement.h"
 #include "ForStatement.h"
@@ -18,53 +19,84 @@
 #include "ParseTreeTraverser.h"
 #include "Identifier.h"
 #include "TerminalExpression.h"
+#include "DynamicMemberExpression.h"
+#include "CallExpression.h"
+#include "NewExpression.h"
+#include "AssignmentExpression.h"
+#include "BinaryExpression.h"
+#include "UnaryExpression.h"
+#include "ClassDeclaration.h"
+#include "TryStatement.h"
+#include "ThrowStatement.h"
 
-class PsiBuilder : public ParseTreeTraverser {
+class PsiBuilder {
 public:
-    PsiBuilder(): _program(nullptr) {}
+    PsiBuilder() : _program(nullptr) {}
 
-    Program* getProgram() {return _program;}
+    Program *getProgram() { return _program; }
 
-    void compile(const std::string& text);
-
-protected:
-    bool onBefore(antlr4::tree::ParseTree *tree) override;
-
-    void onAfter(antlr4::tree::ParseTree *tree) override;
+    void compile(const std::string &path);
 
 private:
-    Program* handleProgram(MoonParser::ProgramContext* tree);
+    Program *handleProgram(MoonParser::ProgramContext *tree);
 
-    Declaration* handleMember(MoonParser::MemberContext* tree);
+    Declaration *handleMember(MoonParser::MemberContext *tree);
 
-    VariableDeclaration* handleVariableDeclaration(MoonParser::VariableDeclarationContext* tree);
+    ClassDeclaration *handleClassDeclaration(MoonParser::ClassDeclarationContext *tree);
 
-    FunctionDeclaration* handleFunctionDeclaration(MoonParser::FunctionDeclarationContext* tree);
+    VariableDeclaration *handleVariableDeclaration(MoonParser::VariableDeclarationContext *tree);
 
-    std::vector<Statement*> handleStatements(MoonParser::StatementsContext* tree);
+    FunctionDeclaration *handleFunctionDeclaration(MoonParser::FunctionDeclarationContext *tree);
 
-    IfStatement* handleIfStatement(MoonParser::IfStatementContext* tree);
+    IfStatement *handleIfStatement(MoonParser::IfStatementContext *tree);
 
-    ForStatement* handleIfStatement(MoonParser::ForStatementContext* tree);
+    ForStatement *handleForStatement(MoonParser::ForStatementContext *tree);
 
-    WhileStatement* handleIfStatement(MoonParser::WhileStatementContext* tree);
+    WhileStatement *handleWhileStatement(MoonParser::WhileStatementContext *tree);
 
-    ReturnStatement* handleIfStatement(MoonParser::ReturnStatementContext* tree);
+    TryStatement *handleTryStatement(MoonParser::TryStatementContext *tree);
 
-    ContinueStatement* handleContinueStatement(MoonParser::ContinueStatementContext* tree);
+    ReturnStatement *handleReturnStatement(MoonParser::ReturnStatementContext *tree);
 
-    BreakStatement* handleBreakStatement(MoonParser::BreakStatementContext* tree);
+    ContinueStatement *handleContinueStatement(MoonParser::ContinueStatementContext *tree);
 
-    BlockStatement* handleBlockStatement(MoonParser::BlockStatementContext* tree);
+    BreakStatement *handleBreakStatement(MoonParser::BreakStatementContext *tree);
 
-    Expression* handleExpression(MoonParser::ExpressionContext* tree);
+    ThrowStatement *handleThrowStatement(MoonParser::ThrowStatementContext *tree);
 
-    Identifier* handleIdentifier(TerminalNode* tree);
+    BlockStatement *handleBlockStatement(MoonParser::BlockStatementContext *tree);
 
-    TerminalExpression* handleTerminal(TerminalNode* tree);
+    Expression *handleExpression(MoonParser::ExpressionContext *tree);
+
+    Expression *handleAccessExpression(MoonParser::ExpressionContext *tree);
+
+    AssignmentExpression *handleAssignmentExpression(MoonParser::ExpressionContext *tree);
+
+    BinaryExpression *handleBinaryExpression(MoonParser::ExpressionContext *tree);
+
+    UnaryExpression *handleUnaryExpression(MoonParser::ExpressionContext *tree);
+
+    Identifier *handleIdentifier(TerminalNode *tree);
+
+    TerminalExpression *handleTerminal(TerminalNode *tree);
 
 private:
-    Program* _program;
+    void unfoldDeclarations(std::vector<Declaration *> &vec, MoonParser::DeclarationsContext *tree);
+
+    void unfoldMembers(std::vector<Declaration *> &vec, MoonParser::MembersContext *tree);
+
+    void unfoldParams(std::vector<Identifier *> &vec, MoonParser::ParamsContext *tree);
+
+    void unfoldStatements(std::vector<Statement *> &vec, MoonParser::StatementsContext *tree);
+
+    void unfoldMultiIfStatement(std::vector<IfStatement *> &vec, MoonParser::MultiIfStatementContext *tree);
+
+    void unfoldAccessExpression(std::vector<Expression *> &vec, MoonParser::AccessExpressionContext *tree);
+
+    void unfoldArguments(std::vector<Expression *> &vec, MoonParser::ArgumentsContext *tree);
+
+private:
+    Program *_program;
 };
 
 

@@ -1,10 +1,28 @@
 #ifndef MOONCPP_FUNCTIONDECLARATION_H
 #define MOONCPP_FUNCTIONDECLARATION_H
 
-#include "Statement.h"
+#include "Declaration.h"
+#include "BlockStatement.h"
+#include "Identifier.h"
 
-class FunctionDeclaration : public Statement {
+class FunctionDeclaration : public Declaration {
+public:
+    void setId(Identifier *id);
 
+    void setBody(BlockStatement *b);
+
+    Identifier *getId() { return _id; }
+
+    BlockStatement *getBody() { return _body; }
+
+    std::vector<Identifier *> &getParams() { return _params; }
+
+private:
+    Identifier *_id;
+
+    BlockStatement *_body;
+
+    std::vector<Identifier *> _params;
 };
 
 

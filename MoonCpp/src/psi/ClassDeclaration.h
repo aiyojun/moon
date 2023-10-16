@@ -3,25 +3,27 @@
 
 #include "Declaration.h"
 #include "Identifier.h"
-#include "VariableDeclaration.h"
-#include "FunctionDeclaration.h"
+
+class VariableDeclaration;
+
+class FunctionDeclaration;
 
 class ClassDeclaration : public Declaration {
 public:
-    void setId(Identifier* id);
+    void setId(Identifier *id);
 
-    Identifier* getId() {return _id;}
+    Identifier *getId() { return _id; }
 
-    std::vector<VariableDeclaration*>& getVariables() {return _variables;}
+    std::vector<VariableDeclaration *> &getVariables() { return _variables; }
 
-    std::vector<FunctionDeclaration*>& getMethods() {return _methods;}
+    std::vector<FunctionDeclaration *> &getMethods() { return _methods; }
 
 private:
-    Identifier* _id;
+    Identifier *_id;
 
-    std::vector<VariableDeclaration*> _variables;
+    std::vector<VariableDeclaration *> _variables;
 
-    std::vector<FunctionDeclaration*> _methods;
+    std::vector<FunctionDeclaration *> _methods;
 };
 
 

@@ -19,14 +19,14 @@ public:
 
     PsiElement *relate(PsiElement *p);
 
-    PsiElement *loc(ParseTree* tree);
+    PsiElement *loc(ParseTree *tree);
 
     virtual std::string toString() { return ""; };
 
 private:
     TextRange _textRange;
 
-    PsiElement *_parent;
+    PsiElement *_parent = nullptr;
 
     std::vector<PsiElement *> _children;
 };

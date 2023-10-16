@@ -1,23 +1,22 @@
 #ifndef MOONCPP_MEMBEREXPRESSION_H
 #define MOONCPP_MEMBEREXPRESSION_H
 
-
 #include "Expression.h"
 
 class MemberExpression : public Expression {
 public:
-    void setObject(Expression* e);
+    void setObject(Expression *e);
 
-    void setProperty(Expression* e);
+    void setProperty(Expression *e);
 
-    Expression* getObject() {return _object;}
+    Expression *getObject() { return _object; }
 
-    Expression* getProperty() {return _property;}
+    Expression *getProperty() { return _property; }
 
 private:
-    Expression* _object;
+    Expression *_object = nullptr;
 
-    Expression* _property;
+    Expression *_property = nullptr;
 };
 
 

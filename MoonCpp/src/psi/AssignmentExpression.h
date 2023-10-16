@@ -14,10 +14,11 @@ public:
     Expression *getRight() { return _right; }
 
     std::string toString() override;
-private:
-    Expression* _left;
 
-    Expression* _right;
+private:
+    Expression *_left = nullptr;
+
+    Expression *_right = nullptr;
 };
 
 #endif //MOONCPP_ASSIGNMENTEXPRESSION_H

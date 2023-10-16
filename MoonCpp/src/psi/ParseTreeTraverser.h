@@ -7,10 +7,11 @@ using antlr4::tree::ParseTree;
 
 class ParseTreeTraverser {
 protected:
-    virtual bool onBefore(ParseTree* tree) = 0;
-    virtual void onAfter(ParseTree* tree) = 0;
+    virtual bool onBefore(ParseTree *tree) = 0;
 
-    void traverse(ParseTree* tree);
+    virtual void onAfter(ParseTree *tree) = 0;
+
+    void traverse(ParseTree *tree);
 };
 
 

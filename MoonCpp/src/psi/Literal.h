@@ -7,9 +7,11 @@
 
 class Literal : public TerminalExpression {
 public:
-    std::string toString() override {return any_cast<std::string>(_value);}
+    std::string toString() override;
 
-    static Literal* build(TerminalNode* term);
+    static Literal *build(TerminalNode *term);
+
+    std::any& value() { return _value; }
 
 private:
     std::any _value;

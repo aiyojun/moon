@@ -22,9 +22,9 @@ public:
 private:
     std::string _operator;
 
-    Expression *_left;
+    Expression *_left = nullptr;
 
-    Expression *_right;
+    Expression *_right = nullptr;
 };
 
 

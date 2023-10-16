@@ -5,18 +5,18 @@
 
 class CallExpression : public Expression {
 public:
-    void setCallee(Expression* callee);
+    void setCallee(Expression *callee);
 
-    Expression* getCallee() { return _callee; }
+    Expression *getCallee() { return _callee; }
 
-    std::vector<Expression*>& getArguments() { return _arguments; }
+    std::vector<Expression *> &getArguments() { return _arguments; }
 
     std::string toString() override;
 
 private:
-    std::vector<Expression*> _arguments;
+    std::vector<Expression *> _arguments;
 
-    Expression* _callee;
+    Expression *_callee = nullptr;
 };
 
 

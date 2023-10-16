@@ -350,7 +350,6 @@ export class PsiBuilder {
     handleTerminal(tree: TerminalNode) {
         if (tree.symbol.type === MoonLexer.ID)
             return Identifier.build(tree.getText()).loc(this.location(tree))
-            // return {...this.location(tree), type: "Identifier", name: tree.getText()}
         if (tree.symbol.type === MoonLexer.NUMBER)
             return Literal.build(parseFloat(tree.getText())).loc(this.location(tree))
         if (tree.symbol.type === MoonLexer.HEX)

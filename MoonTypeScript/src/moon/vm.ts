@@ -224,7 +224,7 @@ export class BytecodeCompiler {
 
     private _while(stmt: WhileStatement) {
         const [lc_0, lc_1] = this.lbl(2)
-        this._stack.push({type: 'white', test: lc_0, end: lc_1})
+        this._stack.push({type: 'while', test: lc_0, end: lc_1})
         this._mark(lc_0)
         this._test(lc_1, stmt.test)
         this._block(stmt.body)

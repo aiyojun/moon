@@ -52,3 +52,18 @@ Literal* Literal::build(TerminalNode* term) {
     }
     return literal;
 }
+
+std::string Literal::toString() {
+    if (!_value.has_value() || _value.type() == typeid(nullptr))
+        return "null";
+    if (_value.type() == typeid(int)) {
+        return std::to_string(std::any_cast<int>(_value));
+    } else if (_value.type() == typeid(double)) {
+        return std::to_string(std::any_cast<double>(_value));
+    } else if (_value.type() == typeid(const std::string&)) {
+        return std::any_cast<const std::string&>(_value);
+    } else if (_value.type() == typeid(bool)) {
+        return std::to_string(std::any_cast<bool>(_value));
+    }
+    return "undefined";
+}

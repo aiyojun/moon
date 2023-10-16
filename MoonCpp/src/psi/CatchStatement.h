@@ -7,17 +7,18 @@
 
 class CatchStatement : public Statement {
 public:
-    void setParam(Identifier* id);
+    void setParam(Identifier *id);
 
-    Identifier* getParam() {return _param;}
+    Identifier *getParam() { return _param; }
 
-    void setBody(BlockStatement* b);
+    void setBody(BlockStatement *b);
 
-    BlockStatement* getBody() {return _body;}
+    BlockStatement *getBody() { return _body; }
+
 private:
-    Identifier* _param;
+    Identifier *_param = nullptr;
 
-    BlockStatement* _body;
+    BlockStatement *_body = nullptr;
 };
 
 

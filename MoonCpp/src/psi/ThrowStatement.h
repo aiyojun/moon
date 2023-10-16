@@ -6,12 +6,12 @@
 
 class ThrowStatement : public Statement {
 public:
-    void setArgument(Expression* e);
+    void setArgument(Expression *e);
 
-    Expression* getArgument() {return _argument;}
+    Expression *getArgument() { return _argument; }
 
 private:
-    Expression* _argument;
+    Expression *_argument = nullptr;
 };
 
 
