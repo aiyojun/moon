@@ -155,9 +155,9 @@ Literal *Evaluator::handleBinaryExpression(BinaryExpression *expr, TerminalExpre
     auto _rv = dynamic_cast<TerminalExpression *>(right);
     auto _rv_ = instanceof<Identifier *>(_rv)
                 ? _engine->runtime()->exchange(as<Identifier *>(_rv))
-                : _lv;
-    std::cout << "[LANG] Binary \n  left : " << left->toString() << "\n  right : " << right->toString() << std::endl;
+                : _rv;
     auto rv = dynamic_cast<Literal *>(_rv_);
+    std::cout << "[LANG] Binary \n  left : " << lv->toString() << "\n  right : " << rv->toString() << std::endl;
     if (op == "+" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() + rv->getAsNumber()); }
     if (op == "-" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() - rv->getAsNumber()); }
     if (op == "*" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() * rv->getAsNumber()); }

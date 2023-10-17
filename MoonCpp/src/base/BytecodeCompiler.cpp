@@ -23,13 +23,13 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
 }
 
 Literal *BytecodeCompiler::interpret() {
-//    std::cout << "[LANG] Bytecodes : " << std::to_string(_bytecodes.size());
-//    int _c = 0;
-//    for (auto _btc : _bytecodes) {
-//        std::cout << "\n  " << std::to_string(_c) << " " << _btc->toString();
-//        _c++;
-//    }
-//    std::cout << std::endl;
+    std::cout << "[LANG] Bytecodes : " << std::to_string(_bytecodes.size());
+    int _c = 0;
+    for (auto _btc : _bytecodes) {
+        std::cout << "\n  " << std::to_string(_c) << " " << _btc->toString();
+        _c++;
+    }
+    std::cout << std::endl;
     _csip = -1;
     while (1) {
         auto btc = next();
