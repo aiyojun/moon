@@ -1,5 +1,6 @@
 #include "VirtualMachine.h"
 #include "MoonScriptEngine.h"
+#include "BytecodeCompiler.h"
 
 void VirtualMachine::compile(FunctionDeclaration *funcDecl) {
     if (_btc.find(funcDecl) != _btc.end()) return;

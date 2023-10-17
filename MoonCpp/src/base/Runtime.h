@@ -11,6 +11,8 @@
 class BuiltinProvider : public PsiElement {
 public:
     virtual Literal *apply(const std::vector<Literal *> &args) = 0;
+
+    std::string toString() override { return "BuiltinProvider"; }
 };
 
 class StkPt {

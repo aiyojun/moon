@@ -21,7 +21,7 @@ public:
 
     PsiElement *loc(ParseTree *tree);
 
-    virtual std::string toString() { return ""; };
+    virtual std::string toString();
 
 private:
     TextRange _textRange;

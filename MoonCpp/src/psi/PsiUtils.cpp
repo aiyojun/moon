@@ -105,29 +105,29 @@ bool PsiUtils::isTermOf(ParseTree *tree, size_t tokenType) {
     return isTerm(tree) && dynamic_cast<TerminalNode*>(tree)->getSymbol()->getType() == tokenType;
 }
 
-bool PsiUtils::isFlatNumber(PsiElement *psi) {
-    if (instanceof<Literal *>(psi)) return false;
-    auto v = dynamic_cast<Literal *>(psi);
-    return v->value().type() == typeid(int) || v->value().type() == typeid(double) || v->value().type() == typeid(bool);
-}
-
-bool PsiUtils::isNumber(PsiElement *psi) {
-    if (instanceof<Literal *>(psi)) return false;
-    auto v = dynamic_cast<Literal *>(psi);
-    return v->value().type() == typeid(int) || v->value().type() == typeid(double);
-}
-
-bool PsiUtils::isString(PsiElement *psi) {
-    if (instanceof<Literal *>(psi)) return false;
-    auto v = dynamic_cast<Literal *>(psi);
-    return v->value().type() == typeid(std::string);
-}
-
-bool PsiUtils::isNull(PsiElement *psi) {
-    if (instanceof<Literal *>(psi)) return false;
-    auto v = dynamic_cast<Literal *>(psi);
-    return v->value().type() == typeid(nullptr);
-}
+//bool PsiUtils::isFlatNumber(PsiElement *psi) {
+//    if (instanceof<Literal *>(psi)) return false;
+//    auto v = dynamic_cast<Literal *>(psi);
+//    return v->value().type() == typeid(int) || v->value().type() == typeid(double) || v->value().type() == typeid(bool);
+//}
+//
+//bool PsiUtils::isNumber(PsiElement *psi) {
+//    if (instanceof<Literal *>(psi)) return false;
+//    auto v = dynamic_cast<Literal *>(psi);
+//    return v->value().type() == typeid(int) || v->value().type() == typeid(double);
+//}
+//
+//bool PsiUtils::isString(PsiElement *psi) {
+//    if (instanceof<Literal *>(psi)) return false;
+//    auto v = dynamic_cast<Literal *>(psi);
+//    return v->value().type() == typeid(std::string);
+//}
+//
+//bool PsiUtils::isNull(PsiElement *psi) {
+//    if (instanceof<Literal *>(psi)) return false;
+//    auto v = dynamic_cast<Literal *>(psi);
+//    return v->value().type() == typeid(nullptr);
+//}
 
 
 

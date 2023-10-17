@@ -9,3 +9,7 @@ def main(argc, argv) {
 new MoonScriptEngine()
     .compile(text)
     .run()
+
+const moon = new MoonScriptEngine()
+
+window["moon"] = moon

@@ -2,6 +2,7 @@
 #define MOONCPP_BYTECODECOMPILER_H
 
 #include <string>
+#include <utility>
 #include "Expression.h"
 #include "FunctionDeclaration.h"
 #include "Literal.h"
@@ -14,12 +15,12 @@
 
 class Bytecode {
 public:
-    virtual std::string toString() { return ""; };
+    virtual std::string toString() = 0;
 };
 
 class BtcGoto : public Bytecode {
 public:
-    BtcGoto(const std::string &label): _tag(label) {}
+    explicit BtcGoto(std::string label) : _tag(std::move(label)) {}
 
     std::string toString() override { return "goto " + _tag; }
 
@@ -33,7 +34,7 @@ private:
 
 class BtcTest : public Bytecode {
 public:
-    BtcTest(const std::string &label, Expression *e): _tag(label), _expression(e) {}
+    BtcTest(std::string label, Expression *e) : _tag(std::move(label)), _expression(e) {}
 
     void setExpression(Expression *e) { _expression = e; }
 
@@ -46,14 +47,14 @@ public:
     std::string toString() override { return "goto " + _tag + ", test " + _expression->toString(); }
 
 private:
-    Expression* _expression = nullptr;
+    Expression *_expression = nullptr;
 
     std::string _tag;
 };
 
 class BtcEval : public Bytecode {
 public:
-    BtcEval(Expression *e): _expression(e) {}
+    explicit BtcEval(Expression *e) : _expression(e) {}
 
     void setExpression(Expression *e) { _expression = e; }
 
@@ -62,12 +63,12 @@ public:
     std::string toString() override { return "eval " + _expression->toString(); }
 
 private:
-    Expression* _expression = nullptr;
+    Expression *_expression = nullptr;
 };
 
 class BtcRet : public Bytecode {
 public:
-    BtcRet(Expression *e): _expression(e) {}
+    explicit BtcRet(Expression *e) : _expression(e) {}
 
     void setExpression(Expression *e) { _expression = e; }
 
@@ -76,12 +77,12 @@ public:
     std::string toString() override { return "ret " + _expression->toString(); }
 
 private:
-    Expression* _expression = nullptr;
+    Expression *_expression = nullptr;
 };
 
 class BtcMark : public Bytecode {
 public:
-    BtcMark(const std::string &label): _tag(label) {}
+    explicit BtcMark(std::string label) : _tag(std::move(label)) {}
 
     std::string toString() override { return _tag + ":"; }
 
@@ -97,7 +98,7 @@ class Evaluator;
 
 class BytecodeCompiler {
 public:
-    BytecodeCompiler(Evaluator *evaluator);
+    explicit BytecodeCompiler(Evaluator *evaluator);
 
     void compile(FunctionDeclaration *func);
 
@@ -122,24 +123,24 @@ private:
 
     void handleReturnStatement(ReturnStatement *stmt);
 
-    void emitTest(const std::string& label, Expression *expr);
+    void emitTest(const std::string &label, Expression *expr);
 
     void emitEval(Expression *expr);
 
-    void emitGoto(const std::string& label);
+    void emitGoto(const std::string &label);
 
-    void emitMark(const std::string& label);
+    void emitMark(const std::string &label);
 
     void emitRet(Expression *expr);
 
     std::map<std::string, std::string> *findLastLoop();
 
-    std::vector<std::string> lbl(int n = 1);
+    std::vector<std::string> labels(int n = 1);
 
 private:
     Evaluator *_evaluator;
 
-    std::vector<Bytecode*> _bytecodes;
+    std::vector<Bytecode *> _bytecodes;
 
     std::vector<std::map<std::string, std::string>> _stack;
 

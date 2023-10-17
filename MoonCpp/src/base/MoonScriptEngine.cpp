@@ -4,10 +4,11 @@
 #include "VirtualMachine.h"
 #include "Evaluator.h"
 #include "../types.h"
+#include "Console.h"
 
 class BuiltinPrintln : public BuiltinProvider {
 public:
-    Literal * apply(const std::vector<Literal *> &args) override;
+    Literal *apply(const std::vector<Literal *> &args) override;
 };
 
 Literal *BuiltinPrintln::apply(const std::vector<Literal *> &args) {
@@ -15,7 +16,8 @@ Literal *BuiltinPrintln::apply(const std::vector<Literal *> &args) {
     for (int i = 0; i < args.size(); i++) {
         stream.append(args[i]->toString());
     }
-    std::cout << "\033[31;1m[MOON]\033[0m " << stream << std::endl;
+    Console::Get()->info(stream);
+//    std::cout << "\033[31m[MOON]\033[0m " << stream << std::endl;
     return nullptr;
 }
 
@@ -27,15 +29,16 @@ MoonScriptEngine::MoonScriptEngine()
 }
 
 void MoonScriptEngine::compile(const std::string &path) {
+    std::cout << "[LANG] Compiling ..." << std::endl;
     _builder->compile(path);
     _program = _builder->getProgram();
     for (auto decl : _program->getBody()) {
-        std::cout << "[LANG] " << "unfold decls : " << _program->getBody().size() << std::endl;
+//        std::cout << "[LANG] " << "unfold decls : " << _program->getBody().size() << std::endl;
         // TODO:
         if (instanceof<FunctionDeclaration *>(decl)) {
             auto func = dynamic_cast<FunctionDeclaration *>(decl);
-            std::cout << "[LANG] VirtualMachine is compiling decl : "
-                << func->getId()->getName() << std::endl;
+//            std::cout << "[LANG] VirtualMachine is compiling decl : "
+//                << func->getId()->getName() << std::endl;
             _rt->record(func->getId()->getName(), func);
             _vm->compile(func);
             continue;
@@ -45,6 +48,7 @@ void MoonScriptEngine::compile(const std::string &path) {
 }
 
 Literal *MoonScriptEngine::run() {
+    std::cout << "[LANG] Run" << std::endl;
     auto _main = new CallExpression;
     _main->setCallee(Identifier::build("main"));
     return _evaluator->evaluate(_main);

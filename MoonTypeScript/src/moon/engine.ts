@@ -132,11 +132,17 @@ export class MoonScriptEngine {
         return this
     }
 
-    vm() { return this._vm }
+    vm() {
+        return this._vm
+    }
 
-    runtime() { return this._runtime }
+    runtime() {
+        return this._runtime
+    }
 
-    evaluator() { return this._evaluator }
+    evaluator() {
+        return this._evaluator
+    }
 
     run() {
         const _main = new CallExpression()

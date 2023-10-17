@@ -18,15 +18,17 @@ import {MoonScriptEngine} from "./engine.js";
 // build code flow by psi(function&statement)
 // code flow supported by state/virtual machine
 
-export class Bytecode {
-    toString() {return ""}
+export interface Bytecode {
+    toString(): string;
 }
 
-export class BtcGoto extends Bytecode {
+export class BtcGoto implements Bytecode {
     tag: string;
+
     toString(): string {
         return `goto ${this.tag}`
     }
+
     static build(l: string) {
         const _r = new BtcGoto
         _r.tag = l
@@ -34,12 +36,14 @@ export class BtcGoto extends Bytecode {
     }
 }
 
-export class BtcTest extends Bytecode {
+export class BtcTest implements Bytecode {
     expression: Expression;
     tag: string;
+
     toString(): string {
         return `goto ${this.tag}, test ${this.expression.toString()}`
     }
+
     static build(e: Expression, l: string) {
         const _r = new BtcTest
         _r.expression = e
@@ -48,11 +52,13 @@ export class BtcTest extends Bytecode {
     }
 }
 
-export class BtcEval extends Bytecode {
+export class BtcEval implements Bytecode {
     expression: Expression;
+
     toString(): string {
         return `eval ${this.expression.toString()}`
     }
+
     static build(e: Expression) {
         const _r = new BtcEval
         _r.expression = e
@@ -60,8 +66,9 @@ export class BtcEval extends Bytecode {
     }
 }
 
-export class BtcRet extends Bytecode {
+export class BtcRet implements Bytecode {
     expression: Expression;
+
     toString(): string {
         return `ret ${this.expression.toString()}`
     }
@@ -73,8 +80,9 @@ export class BtcRet extends Bytecode {
     }
 }
 
-export class BtcMark extends Bytecode {
+export class BtcMark implements Bytecode {
     tag: string;
+
     static build(l: string) {
         const _r = new BtcMark
         _r.tag = l
@@ -96,8 +104,9 @@ export class BytecodeCompiler {
     constructor(readonly evaluator: Evaluator) {
     }
 
-    bytecode(): Bytecode[] { return this._bytecodes }
-
+    bytecode(): Bytecode[] {
+        return this._bytecodes
+    }
 
     compile(func: FunctionDeclaration) {
         const [lc_0] = this.lbl()
@@ -170,9 +179,10 @@ export class BytecodeCompiler {
     }
 
     private _if(stmt: IfStatement) {
-        const [lc_0] = this.lbl()
+        const [lc_0, lc_1] = this.lbl(2)
         this._test(lc_0, stmt.test)
         this._block(stmt.consequent)
+        this._goto(lc_1)
         this._mark(lc_0)
         if (stmt.alternate !== null) {
             if (stmt.alternate instanceof IfStatement) {
@@ -181,6 +191,7 @@ export class BytecodeCompiler {
                 this._block(stmt.alternate)
             }
         }
+        this._mark(lc_1)
     }
 
     private _block(stmts: BlockStatement) {

@@ -76,13 +76,14 @@ IfStatement *PsiBuilder::handleIfStatement(MoonParser::IfStatementContext *tree)
     this->unfoldMultiIfStatement(ifStmt, tree->multiIfStatement());
     int idx = 1;
     while (idx < ifStmt.size()) {
+        std::cout << "[LANG] while if \n";
         ifStmt[idx - 1]->setAlternate(ifStmt[idx]);
         idx++;
     }
     if (tree->elseStatement()->blockStatement()) {
         ifStmt[idx - 1]->setAlternate(handleBlockStatement(tree->elseStatement()->blockStatement()));
     }
-    return nullptr;
+    return ifStmt[0];
 }
 
 ForStatement *PsiBuilder::handleForStatement(MoonParser::ForStatementContext *tree) {
@@ -194,6 +195,7 @@ Expression *PsiBuilder::handleAccessExpression(MoonParser::ExpressionContext *tr
         auto p = _r;
         int idx = 0;
         while (idx < vec.size()) {
+            std::cout << "[LANG] while access \n";
             if (instanceof<CallExpression*>(vec[idx])) {
                 dynamic_cast<CallExpression*>(vec[idx])->setCallee(p);
             } else if (instanceof<DynamicMemberExpression*>(vec[idx])) {

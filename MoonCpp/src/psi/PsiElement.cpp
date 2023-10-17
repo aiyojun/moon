@@ -1,5 +1,9 @@
 #include "PsiElement.h"
 #include "PsiUtils.h"
+#include "TerminalExpression.h"
+#include "types.h"
+#include "Identifier.h"
+#include "Literal.h"
 
 using antlr4::Token;
 using antlr4::tree::TerminalNode;
@@ -28,4 +32,12 @@ PsiElement *PsiElement::loc(ParseTree* tree) {
         _textRange.end = token->getStopIndex();
     }
     return this;
+}
+
+std::string PsiElement::toString() {
+    std::string stream;
+    for (auto child : _children) {
+        stream.append(child->toString());
+    }
+    return stream;
 }

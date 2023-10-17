@@ -178,8 +178,8 @@ export class PsiBuilder {
                 ? this.handleExpression(tree.children[semi[0] - 1] as ExpressionContext) : null
             l.test = tree.children[semi[1] - 1] instanceof ExpressionContext
                 ? this.handleExpression(tree.children[semi[1] - 1] as ExpressionContext) : null
-            l.update = tree.children[semi[2] - 1] instanceof ExpressionContext
-                ? this.handleExpression(tree.children[semi[2] - 1] as ExpressionContext) : null
+            l.update = tree.children[semi[1] + 1] instanceof ExpressionContext
+                ? this.handleExpression(tree.children[semi[1] + 1] as ExpressionContext) : null
             l.body = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
             // l.init?.relate(l); l.test?.relate(l); l.update?.relate(l); l.body.relate(l)
             return l

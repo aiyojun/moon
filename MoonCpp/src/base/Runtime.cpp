@@ -19,7 +19,7 @@ void Runtime::record(const std::string &id, PsiElement *entity) {
 PsiElement *Runtime::exchange(Identifier *id) {
     auto ptr = ref(id->getName());
     if (!ptr)
-        throw SyntaxError("");
+        throw SyntaxError("No such identifier : " + id->getName());
     return (*ptr)[id->getName()];
 }
 
