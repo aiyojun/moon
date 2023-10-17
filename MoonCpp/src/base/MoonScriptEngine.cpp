@@ -17,7 +17,6 @@ Literal *BuiltinPrintln::apply(const std::vector<Literal *> &args) {
         stream.append(args[i]->toString());
     }
     Console::Get()->info(stream);
-//    std::cout << "\033[31m[MOON]\033[0m " << stream << std::endl;
     return nullptr;
 }
 

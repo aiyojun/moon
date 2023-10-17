@@ -44,8 +44,8 @@ ClassDeclaration *PsiBuilder::handleClassDeclaration(MoonParser::ClassDeclaratio
     std::vector<Declaration *> vec;
     unfoldMembers(vec, tree->members());
     for (Declaration* m : vec) {
-        std::cout << "[LANG] instanceof<VariableDeclaration *>(m) : "
-                  << (instanceof<VariableDeclaration *>(m) ? "true" : "false") << std::endl;
+//        std::cout << "[LANG] instanceof<VariableDeclaration *>(m) : "
+//                  << (instanceof<VariableDeclaration *>(m) ? "true" : "false") << std::endl;
         if (instanceof<VariableDeclaration *>(m)) {
             _r->getVariables().emplace_back(dynamic_cast<VariableDeclaration *>(m));
         } else if (instanceof<FunctionDeclaration *>(m)) {
@@ -76,7 +76,6 @@ IfStatement *PsiBuilder::handleIfStatement(MoonParser::IfStatementContext *tree)
     this->unfoldMultiIfStatement(ifStmt, tree->multiIfStatement());
     int idx = 1;
     while (idx < ifStmt.size()) {
-        std::cout << "[LANG] while if \n";
         ifStmt[idx - 1]->setAlternate(ifStmt[idx]);
         idx++;
     }
@@ -179,7 +178,7 @@ Expression *PsiBuilder::handleExpression(MoonParser::ExpressionContext *tree) {
 }
 
 Expression *PsiBuilder::handleAccessExpression(MoonParser::ExpressionContext *tree) {
-    Expression *_r = nullptr;
+    Expression *_r;
     if (PsiUtils::isTerm(tree->children[0]) && tree->children[0]->getText() == "new") {
         auto obj = new NewExpression;
         obj->setCallee(handleIdentifier(tree->ID()));
@@ -195,7 +194,6 @@ Expression *PsiBuilder::handleAccessExpression(MoonParser::ExpressionContext *tr
         auto p = _r;
         int idx = 0;
         while (idx < vec.size()) {
-            std::cout << "[LANG] while access \n";
             if (instanceof<CallExpression*>(vec[idx])) {
                 dynamic_cast<CallExpression*>(vec[idx])->setCallee(p);
             } else if (instanceof<DynamicMemberExpression*>(vec[idx])) {

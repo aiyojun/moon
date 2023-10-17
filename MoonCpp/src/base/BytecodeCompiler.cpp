@@ -10,8 +10,6 @@ BytecodeCompiler::BytecodeCompiler(Evaluator *evaluator): _evaluator(evaluator) 
 }
 
 void BytecodeCompiler::compile(FunctionDeclaration *func) {
-//    std::cout << "[LANG] bytecode compile " << func->toString() << std::endl;
-//    std::cout << "[LANG] body " << (func->getBody() == nullptr ? "null" : "exists") << " " << std::to_string(func->getBody()->getBody().size()) << std::endl;
     _lblCount = 0;
     auto lc = labels();
     _stack.emplace_back(std::map<std::string, std::string>{
@@ -23,13 +21,6 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
 }
 
 Literal *BytecodeCompiler::interpret() {
-    std::cout << "[LANG] Bytecodes : " << std::to_string(_bytecodes.size());
-    int _c = 0;
-    for (auto _btc : _bytecodes) {
-        std::cout << "\n  " << std::to_string(_c) << " " << _btc->toString();
-        _c++;
-    }
-    std::cout << std::endl;
     _csip = -1;
     while (1) {
         auto btc = next();
@@ -80,12 +71,15 @@ void BytecodeCompiler::optimize() {
     for (auto bc : _bytecodes) {
         if (instanceof<BtcMark *>(bc)) {
             auto b = as<BtcMark *>(bc);
-            if (_lblIdxInUsing.find(b->getTag()) != _lblIdxInUsing.end()) {
-                _lblIdxInUsing[b->getTag()] = _r.size();
+            if (_lblIdxInUsing.find(b->getTag()) == _lblIdxInUsing.end()) {
+                continue;
+            } else {
+                _lblIdxInUsing[b->getTag()] = (int) _r.size();
             }
         }
+        _r.emplace_back(bc);
     }
-//    _bytecodes = _r;
+    _bytecodes = _r;
 }
 
 void BytecodeCompiler::handleIfStatement(IfStatement *stmt) {
@@ -107,9 +101,7 @@ void BytecodeCompiler::handleIfStatement(IfStatement *stmt) {
 void BytecodeCompiler::handleBlockStatement(BlockStatement *stmts) {
     for (int i = 0; i < stmts->getBody().size(); i++) {
         auto stmt = stmts->getBody()[i];
-//        std::cout << "[LANG] Block statement : " << i << " " << stmt->toString() << std::endl;
         if (instanceof<Expression *>(stmt)) {
-//            std::cout << "[LANG] Block statement : eval" << std::endl;
             emitEval(as<Expression *>(stmt));
         } else if (instanceof<BreakStatement *>(stmt)) {
             handleBreakStatement(as<BreakStatement *>(stmt));

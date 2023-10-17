@@ -21,7 +21,7 @@ PsiElement *Runtime::exchange(Identifier *id) {
     auto ptr = ref(id->getName());
     if (!ptr)
         throw SyntaxError("No such identifier : " + id->getName());
-    std::cout << "[LANG] Exchange : " << id->getName() << " = " << (*ptr)[id->getName()]->toString() << std::endl;
+//    std::cout << "[LANG] Exchange : " << id->getName() << " = " << (*ptr)[id->getName()]->toString() << std::endl;
     return (*ptr)[id->getName()];
 }
 

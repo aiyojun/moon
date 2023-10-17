@@ -61,25 +61,25 @@ void Evaluator::onAfter(PsiElement *e) {
 
 Literal *Evaluator::evaluate(Expression *expression) {
     if (instanceof<Literal *>(expression)) { return as<Literal *>(expression); }
-    if (!expression) {
-        std::cout << "[LANG] eval expression null !!!\n";
-    }
-    std::cout << "[LANG] evaluation " << expression->toString() << std::endl;
+//    if (!expression) {
+//        std::cout << "[LANG] eval expression null !!!\n";
+//    }
+//    std::cout << "[LANG] evaluation " << expression->toString() << std::endl;
     _stack.clear();
     walk(expression);
     auto _r = _stack.back();
     if (_r == nullptr) {
-        std::cout << "[LANG] eval stack return null !!!\n";
+//        std::cout << "[LANG] eval stack return null !!!\n";
         return nullptr;
     } else if (instanceof<Identifier *>(_r)) {
         auto _p = as<Literal *>(_engine->runtime()->exchange(as<Identifier *>(_r)));
-        std::cout << "[LANG] eval result : " << _p->toString() << std::endl;
+//        std::cout << "[LANG] eval result : " << _p->toString() << std::endl;
         return _p;
     } else if (instanceof<Literal *>(_r)) {
-        std::cout << "[LANG] eval result : " << _r->toString() << std::endl;
+//        std::cout << "[LANG] eval result : " << _r->toString() << std::endl;
         return as<Literal *>(_r);
     }
-    std::cout << "[LANG] eval null !!!" << std::endl;
+//    std::cout << "[LANG] eval null !!!" << std::endl;
     return nullptr;
 }
 
@@ -157,14 +157,23 @@ Literal *Evaluator::handleBinaryExpression(BinaryExpression *expr, TerminalExpre
                 ? _engine->runtime()->exchange(as<Identifier *>(_rv))
                 : _rv;
     auto rv = dynamic_cast<Literal *>(_rv_);
-    std::cout << "[LANG] Binary \n  left : " << lv->toString() << "\n  right : " << rv->toString() << std::endl;
+//    std::cout << "[LANG] Binary \n  left : " << lv->toString() << "\n  right : " << rv->toString() << std::endl;
+    if (op == "+" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() + rv->isInteger()); }
+    if (op == "-" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() - rv->isInteger()); }
+    if (op == "*" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() * rv->isInteger()); }
+    if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() / rv->isInteger()); }
+    if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() / rv->isInteger()); }
+    if (op == "%" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() % rv->isInteger()); }
+    if (op == "^" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() ^ rv->isInteger()); }
+    if (op == "|" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() | rv->isInteger()); }
+    if (op == "&" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() & rv->isInteger()); }
+
     if (op == "+" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() + rv->getAsNumber()); }
     if (op == "-" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() - rv->getAsNumber()); }
     if (op == "*" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() * rv->getAsNumber()); }
     if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() / rv->getAsInteger()); }
     if (op == "/" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() / rv->getAsNumber()); }
     if (op == "%" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsInteger() % rv->getAsInteger()); }
-    if (op == "^" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() ^ rv->getAsInteger()); }
     if (op == "|" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsInteger() | rv->getAsInteger()); }
     if (op == "&" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsInteger() & rv->getAsInteger()); }
     if (op == ">" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() > rv->getAsNumber()); }

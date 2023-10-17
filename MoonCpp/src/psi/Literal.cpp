@@ -36,7 +36,7 @@ Literal* Literal::build(TerminalNode* term) {
     literal->loc(term);
     auto text = term->getText();
     if (term->getSymbol()->getType() == MoonLexer::NUMBER) {
-        if (text.find('.') != std::string::npos) {
+        if (text.find('.') == std::string::npos) {
             literal->setValue(std::stoi(term->getText()));
         } else {
             literal->setValue(std::stod(text));
