@@ -9,10 +9,12 @@
 #include "BinaryExpression.h"
 #include "UnaryExpression.h"
 #include "MoonScriptEngine.h"
+#include "SymbolProvider.h"
 
 class Evaluator : public PsiElementTraverser {
 public:
-    explicit Evaluator(MoonScriptEngine *engine) : _engine(engine) {}
+    explicit Evaluator(MoonScriptEngine *engine, VirtualMachine *vm, SymbolProvider *symbols)
+            : _engine(engine), _vm(vm), _symbols(symbols) {}
 
     Literal *evaluate(Expression *expr);
 
@@ -32,6 +34,10 @@ private:
 
 private:
     MoonScriptEngine *_engine;
+
+    SymbolProvider *_symbols;
+
+    VirtualMachine *_vm;
 
     std::vector<TerminalExpression *> _stack;
 };

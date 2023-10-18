@@ -98,11 +98,11 @@ class Evaluator;
 
 class BytecodeCompiler {
 public:
-    explicit BytecodeCompiler(Evaluator *evaluator);
+    BytecodeCompiler();
 
     void compile(FunctionDeclaration *func);
 
-    Literal *interpret();
+    Literal *interpret(Evaluator *evaluator);
 
 private:
     Bytecode *next();
@@ -138,8 +138,6 @@ private:
     std::vector<std::string> labels(int n = 1);
 
 private:
-    Evaluator *_evaluator;
-
     std::vector<Bytecode *> _bytecodes;
 
     std::vector<std::map<std::string, std::string>> _stack;

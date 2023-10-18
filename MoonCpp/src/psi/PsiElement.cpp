@@ -1,9 +1,5 @@
 #include "PsiElement.h"
 #include "PsiUtils.h"
-#include "TerminalExpression.h"
-#include "types.h"
-#include "Identifier.h"
-#include "Literal.h"
 
 using antlr4::Token;
 using antlr4::tree::TerminalNode;
@@ -17,16 +13,16 @@ PsiElement *PsiElement::relate(PsiElement *p) {
     return this;
 }
 
-PsiElement *PsiElement::loc(ParseTree* tree) {
+PsiElement *PsiElement::loc(ParseTree *tree) {
     if (PsiUtils::isRule(tree)) {
-        auto* rule = dynamic_cast<ParserRuleContext*>(tree);
-        Token* start = rule->getStart();
-        Token* stop  = rule->getStop();
+        auto *rule = dynamic_cast<ParserRuleContext *>(tree);
+        Token *start = rule->getStart();
+        Token *stop = rule->getStop();
         _textRange.line = start->getLine();
         _textRange.start = start->getStartIndex();
         _textRange.end = stop->getStopIndex();
     } else if (PsiUtils::isTerm(tree)) {
-        Token* token = dynamic_cast<TerminalNode*>(tree)->getSymbol();
+        Token *token = dynamic_cast<TerminalNode *>(tree)->getSymbol();
         _textRange.line = token->getLine();
         _textRange.start = token->getStartIndex();
         _textRange.end = token->getStopIndex();
@@ -36,7 +32,7 @@ PsiElement *PsiElement::loc(ParseTree* tree) {
 
 std::string PsiElement::toString() {
     std::string stream;
-    for (auto child : _children) {
+    for (auto child: _children) {
         stream.append(child->toString());
     }
     return stream;

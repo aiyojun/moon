@@ -4,6 +4,7 @@
 #include "FunctionDeclaration.h"
 #include "Literal.h"
 #include "BytecodeCompiler.h"
+#include "SymbolProvider.h"
 
 class MoonScriptEngine;
 
@@ -13,13 +14,14 @@ public:
 
     void compile(FunctionDeclaration *funcDecl);
 
-    Literal *invoke(FunctionDeclaration* funcDecl);
+    Literal *invoke(SymbolProvider *tbl, FunctionDeclaration *fnt, std::vector<Literal *> args);
+
+    Literal *evaluate(SymbolProvider *tbl, Expression *exp);
 
 private:
     MoonScriptEngine* _engine;
 
     std::map<FunctionDeclaration *, BytecodeCompiler *> _btc;
 };
-
 
 #endif //MOONCPP_VIRTUALMACHINE_H

@@ -4,24 +4,14 @@
 #include <string>
 #include "Literal.h"
 #include "Program.h"
-
-class Runtime;
-
-class Evaluator;
-
-class PsiBuilder;
-
-class VirtualMachine;
+#include "Scope.h"
+#include "SymbolProvider.h"
+#include "VirtualMachine.h"
+#include "PsiBuilder.h"
 
 class MoonScriptEngine {
 public:
     MoonScriptEngine();
-
-    Runtime *runtime() { return _rt; }
-
-    VirtualMachine *vm() { return _vm; }
-
-    Evaluator *evaluator() { return _evaluator; }
 
     Program *program() { return _program; }
 
@@ -29,17 +19,16 @@ public:
 
     Literal *run();
 
+    SymbolProvider *createFunctionScope() { return new SymbolProvider({_globalScope}); }
+
 private:
-    Runtime *_rt;
+    Scope *_globalScope;
 
     VirtualMachine *_vm;
 
     PsiBuilder *_builder;
 
-    Evaluator *_evaluator;
-
     Program *_program;
 };
-
 
 #endif //MOONCPP_MOONSCRIPTENGINE_H

@@ -1,12 +1,12 @@
-#include "Evaluator.h"
 #include "types.h"
+#include "Evaluator.h"
 #include "CallExpression.h"
 #include "Identifier.h"
 #include "SyntaxError.h"
-#include "Runtime.h"
 #include "FunctionDeclaration.h"
 #include "VirtualMachine.h"
 #include "MemberExpression.h"
+#include "BuiltinProvider.h"
 
 bool Evaluator::onBefore(PsiElement *e) {
     if (instanceof<CallExpression *>(e)) {
@@ -60,78 +60,53 @@ void Evaluator::onAfter(PsiElement *e) {
 }
 
 Literal *Evaluator::evaluate(Expression *expression) {
-    if (instanceof<Literal *>(expression)) { return as<Literal *>(expression); }
-//    if (!expression) {
-//        std::cout << "[LANG] eval expression null !!!\n";
-//    }
-//    std::cout << "[LANG] evaluation " << expression->toString() << std::endl;
+    if (instanceof<Literal *>(expression))
+    { return as<Literal *>(expression); }
+    if (instanceof<Identifier *>(expression))
+    { return _symbols->get(as<Identifier *>(expression)->getName())->getAs<Literal *>(); }
     _stack.clear();
     walk(expression);
     auto _r = _stack.back();
-    if (_r == nullptr) {
-//        std::cout << "[LANG] eval stack return null !!!\n";
-        return nullptr;
-    } else if (instanceof<Identifier *>(_r)) {
-        auto _p = as<Literal *>(_engine->runtime()->exchange(as<Identifier *>(_r)));
-//        std::cout << "[LANG] eval result : " << _p->toString() << std::endl;
-        return _p;
-    } else if (instanceof<Literal *>(_r)) {
-//        std::cout << "[LANG] eval result : " << _r->toString() << std::endl;
-        return as<Literal *>(_r);
-    }
-//    std::cout << "[LANG] eval null !!!" << std::endl;
+    if (!_r) return nullptr;
+    if (instanceof<Identifier *>(_r)) { throw SyntaxError("evaluate failed!"); }
+    if (instanceof<Literal *>(_r)) { return as<Literal *>(_r); }
     return nullptr;
 }
 
 
 Literal *Evaluator::handleAssignmentExpression(AssignmentExpression *expr, TerminalExpression *left, TerminalExpression *right) {
-    auto rt = _engine->runtime();
     auto _r = evaluate(right);
-    rt->record(dynamic_cast<Identifier *>(left)->getName(), _r);
+    _symbols->scan(Symbol::build(as<Identifier *>(left), _r));
     return _r;
 }
 
 Literal *Evaluator::handleCallExpression(CallExpression *expr) {
-//    std::cout << "[LANG] call " << expr->toString() << std::endl;
     auto callee = expr->getCallee();
     if (!instanceof<Identifier *>(callee))
         throw SyntaxError(callee->toString() + " is not callable!");
     auto funcName = as<Identifier *>(callee)->getName();
-    auto rt = _engine->runtime();
-    auto _ref = rt->ref(funcName);
-    if (!_ref)
+    auto symbol = _symbols->get(funcName);
+    if (!symbol)
         throw SyntaxError("error: no such function " + funcName);
+    if (!symbol->callable())
+        throw SyntaxError("error: " + funcName + " not callable");
     std::vector<Literal *> args;
-    for (auto arg : expr->getArguments()) {
+    for (auto arg : expr->getArguments())
         args.emplace_back(evaluate(arg));
-    }
-    auto func = (*_ref)[funcName];
-    if (instanceof<BuiltinProvider *>(func)) {
-        auto builtin = as<BuiltinProvider *>(func);
+    if (symbol->isBuiltinFunction()) {
+        auto builtin = symbol->getAs<BuiltinProvider *>();
         return builtin->apply(args);
-    } else {
-        auto decl = as<FunctionDeclaration *>(func);
-//        std::cout << "[LANG] Function declaration : " << decl->toString() << std::endl;
-        rt->push(new PtCall(decl));
-        for (int i = 0; i < decl->getParams().size(); i++) {
-            auto param = decl->getParams()[i];
-            rt->record(param->getName(), args[i]);
-        }
-        auto vm = _engine->vm();
-        vm->compile(decl);
-        auto _r = vm->invoke(decl);
-        rt->pop();
-        return _r;
     }
+    auto decl = symbol->getAs<FunctionDeclaration *>();
+    return _vm->invoke(_engine->createFunctionScope(), decl, args);
 }
 
 Literal *Evaluator::handleUnaryExpression(UnaryExpression *expr, TerminalExpression *e) {
     auto op = expr->getOperator();
-//    auto e = dynamic_cast<TerminalExpression *>(expr->getArgument());
     if (!e)
         throw SyntaxError("unary expression exception : void");
     auto _ev = instanceof<Identifier *>(e)
-               ? _engine->runtime()->exchange(dynamic_cast<Identifier *>(e))
+               ? _symbols->get(as<Identifier *>(e)->getName())->getAs<Literal *>()
                : e;
     auto ev = dynamic_cast<Literal *>(_ev);
     if (op == "!") { return Literal::build(! ev->getAsBoolean()); }
@@ -149,12 +124,12 @@ Literal *Evaluator::handleBinaryExpression(BinaryExpression *expr, TerminalExpre
     auto op = expr->getOperator();
     auto _lv = dynamic_cast<TerminalExpression *>(left);
     auto _lv_ = instanceof<Identifier *>(_lv)
-                ? _engine->runtime()->exchange(as<Identifier *>(_lv))
+                ? _symbols->get(as<Identifier *>(_lv)->getName())->getAs<Literal *>()
                 : _lv;
     auto lv = dynamic_cast<Literal *>(_lv_);
     auto _rv = dynamic_cast<TerminalExpression *>(right);
     auto _rv_ = instanceof<Identifier *>(_rv)
-                ? _engine->runtime()->exchange(as<Identifier *>(_rv))
+                ? _symbols->get(as<Identifier *>(_rv)->getName())->getAs<Literal *>()
                 : _rv;
     auto rv = dynamic_cast<Literal *>(_rv_);
 //    std::cout << "[LANG] Binary \n  left : " << lv->toString() << "\n  right : " << rv->toString() << std::endl;

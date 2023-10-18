@@ -1,11 +1,12 @@
+#include "types.h"
 #include "BytecodeCompiler.h"
-#include "../types.h"
 #include "SyntaxError.h"
 #include "Evaluator.h"
 
 int BytecodeCompiler::_lblCount = 0;
 
-BytecodeCompiler::BytecodeCompiler(Evaluator *evaluator): _evaluator(evaluator) {
+BytecodeCompiler::BytecodeCompiler()
+        : _csip(0) {
 
 }
 
@@ -20,19 +21,19 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
     optimize();
 }
 
-Literal *BytecodeCompiler::interpret() {
+Literal *BytecodeCompiler::interpret(Evaluator *evaluator) {
     _csip = -1;
-    while (1) {
+    while (true) {
         auto btc = next();
         if (!btc)
             break;
         if (instanceof<BtcEval *>(btc)) {
-            _evaluator->evaluate(as<BtcEval *>(btc)->getExpression());
+            evaluator->evaluate(as<BtcEval *>(btc)->getExpression());
             continue;
         }
         if (instanceof<BtcTest *>(btc)) {
             auto b = as<BtcTest *>(btc);
-            auto r = _evaluator->evaluate(b->getExpression());
+            auto r = evaluator->evaluate(b->getExpression());
             if (!r->getAsBoolean()) {
                 _csip = _lblIdxInUsing[b->getTag()];
             }
@@ -40,7 +41,7 @@ Literal *BytecodeCompiler::interpret() {
         }
         if (instanceof<BtcRet *>(btc)) {
             auto b = as<BtcRet *>(btc);
-            return b->getExpression() ? _evaluator->evaluate(b->getExpression()) : nullptr;
+            return b->getExpression() ? evaluator->evaluate(b->getExpression()) : nullptr;
         }
     }
     return nullptr;
@@ -49,7 +50,7 @@ Literal *BytecodeCompiler::interpret() {
 Bytecode *BytecodeCompiler::next() {
     if (_bytecodes.empty()) return nullptr;
     Bytecode *btc = nullptr;
-    while (1) {
+    while (true) {
         if (_csip + 1 >= _bytecodes.size())
             break;
         btc = _bytecodes[++_csip];
@@ -99,8 +100,7 @@ void BytecodeCompiler::handleIfStatement(IfStatement *stmt) {
 }
 
 void BytecodeCompiler::handleBlockStatement(BlockStatement *stmts) {
-    for (int i = 0; i < stmts->getBody().size(); i++) {
-        auto stmt = stmts->getBody()[i];
+    for (auto stmt : stmts->getBody()) {
         if (instanceof<Expression *>(stmt)) {
             emitEval(as<Expression *>(stmt));
         } else if (instanceof<BreakStatement *>(stmt)) {
@@ -205,7 +205,7 @@ std::vector<std::string> BytecodeCompiler::labels(int n) {
 
 std::map<std::string, std::string> *BytecodeCompiler::findLastLoop() {
     std::vector<std::string> loopTypes{"while", "for"};
-    for (int i = _stack.size() - 1; i > -1; i--) {
+    for (int i = (int) _stack.size() - 1; i > -1; i--) {
         auto item = _stack[i];
         if (std::find(loopTypes.begin(), loopTypes.end(), item["type"]) != loopTypes.end()) {
             return &_stack[i];

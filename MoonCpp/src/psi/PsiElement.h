@@ -31,5 +31,4 @@ private:
     std::vector<PsiElement *> _children;
 };
 
-
 #endif //MOONCPP_PSIELEMENT_H

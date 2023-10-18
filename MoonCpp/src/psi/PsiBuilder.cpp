@@ -18,7 +18,7 @@ void PsiBuilder::compile(const std::string &path) {
     parser.addErrorListener(new MoonCompileErrorListener);
     try {
         _program = handleProgram(parser.program());
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
 }
@@ -43,9 +43,7 @@ ClassDeclaration *PsiBuilder::handleClassDeclaration(MoonParser::ClassDeclaratio
     auto _r = new ClassDeclaration;
     std::vector<Declaration *> vec;
     unfoldMembers(vec, tree->members());
-    for (Declaration* m : vec) {
-//        std::cout << "[LANG] instanceof<VariableDeclaration *>(m) : "
-//                  << (instanceof<VariableDeclaration *>(m) ? "true" : "false") << std::endl;
+    for (Declaration *m: vec) {
         if (instanceof<VariableDeclaration *>(m)) {
             _r->getVariables().emplace_back(dynamic_cast<VariableDeclaration *>(m));
         } else if (instanceof<FunctionDeclaration *>(m)) {
@@ -72,7 +70,7 @@ FunctionDeclaration *PsiBuilder::handleFunctionDeclaration(MoonParser::FunctionD
 }
 
 IfStatement *PsiBuilder::handleIfStatement(MoonParser::IfStatementContext *tree) {
-    std::vector<IfStatement*> ifStmt;
+    std::vector<IfStatement *> ifStmt;
     this->unfoldMultiIfStatement(ifStmt, tree->multiIfStatement());
     int idx = 1;
     while (idx < ifStmt.size()) {
@@ -194,12 +192,12 @@ Expression *PsiBuilder::handleAccessExpression(MoonParser::ExpressionContext *tr
         auto p = _r;
         int idx = 0;
         while (idx < vec.size()) {
-            if (instanceof<CallExpression*>(vec[idx])) {
-                dynamic_cast<CallExpression*>(vec[idx])->setCallee(p);
-            } else if (instanceof<DynamicMemberExpression*>(vec[idx])) {
-                dynamic_cast<DynamicMemberExpression*>(vec[idx])->setObject(p);
-            } else if (instanceof<MemberExpression*>(vec[idx])) {
-                dynamic_cast<MemberExpression*>(vec[idx])->setObject(p);
+            if (instanceof<CallExpression *>(vec[idx])) {
+                dynamic_cast<CallExpression *>(vec[idx])->setCallee(p);
+            } else if (instanceof<DynamicMemberExpression *>(vec[idx])) {
+                dynamic_cast<DynamicMemberExpression *>(vec[idx])->setObject(p);
+            } else if (instanceof<MemberExpression *>(vec[idx])) {
+                dynamic_cast<MemberExpression *>(vec[idx])->setObject(p);
             }
             p = vec[idx];
             idx++;
@@ -271,7 +269,7 @@ void PsiBuilder::unfoldMembers(std::vector<Declaration *> &vec, MoonParser::Memb
 
 void PsiBuilder::unfoldParams(std::vector<Identifier *> &vec, MoonParser::ParamsContext *tree) {
     if (!tree->params().empty()) {
-        for (auto param : tree->params())
+        for (auto param: tree->params())
             unfoldParams(vec, param);
         return;
     }
@@ -328,7 +326,7 @@ void PsiBuilder::unfoldStatements(std::vector<Statement *> &vec, MoonParser::Sta
 
 void PsiBuilder::unfoldMultiIfStatement(std::vector<IfStatement *> &vec, MoonParser::MultiIfStatementContext *tree) {
     if (!tree->multiIfStatement().empty()) {
-        for (auto x : tree->multiIfStatement()) {
+        for (auto x: tree->multiIfStatement()) {
             unfoldMultiIfStatement(vec, x);
         }
         return;
@@ -355,7 +353,7 @@ TerminalExpression *PsiBuilder::handleTerminal(TerminalNode *tree) {
 
 void PsiBuilder::unfoldAccessExpression(std::vector<Expression *> &vec, MoonParser::AccessExpressionContext *tree) {
     if (!tree->accessExpression().empty()) {
-        for (auto x : tree->accessExpression()) {
+        for (auto x: tree->accessExpression()) {
             unfoldAccessExpression(vec, x);
         }
         return;
@@ -382,9 +380,9 @@ void PsiBuilder::unfoldAccessExpression(std::vector<Expression *> &vec, MoonPars
     }
 }
 
-void PsiBuilder::unfoldArguments(std::vector<Expression*>& vec, MoonParser::ArgumentsContext* tree) {
+void PsiBuilder::unfoldArguments(std::vector<Expression *> &vec, MoonParser::ArgumentsContext *tree) {
     if (!tree->arguments().empty()) {
-        for (auto x : tree->arguments()) {
+        for (auto x: tree->arguments()) {
             unfoldArguments(vec, x);
         }
         return;

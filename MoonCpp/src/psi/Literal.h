@@ -6,9 +6,15 @@
 
 class Literal : public TerminalExpression {
 public:
-    enum ValueType {V_BOOL, V_INT, V_FLOAT, V_STRING, V_NULL};
+    enum ValueType {
+        V_BOOL, V_INT, V_FLOAT, V_STRING, V_NULL
+    };
 
-    union Storage { int vi; double vf; bool vb; };
+    union Storage {
+        int vi;
+        double vf;
+        bool vb;
+    };
 
     std::string toString() override;
 

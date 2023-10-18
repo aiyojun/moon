@@ -13,14 +13,6 @@ using antlr4::ANTLRErrorListener;
 
 class PsiUtils {
 public:
-    static bool isNull(PsiElement *psi);
-
-    static bool isFlatNumber(PsiElement *psi);
-
-    static bool isNumber(PsiElement *psi);
-
-    static bool isString(PsiElement *psi);
-
     static bool isRule(ParseTree *tree);
 
     static bool isError(ParseTree *tree);
@@ -63,6 +55,5 @@ public:
 
     static ParserRuleContext *findFirstParserRule(std::vector<ParseTree *> &children, size_t rule);
 };
-
 
 #endif //MOONCPP_PSIUTILS_H

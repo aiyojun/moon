@@ -16,7 +16,6 @@
 #include "ContinueStatement.h"
 #include "BreakStatement.h"
 #include "MemberExpression.h"
-#include "ParseTreeTraverser.h"
 #include "Identifier.h"
 #include "TerminalExpression.h"
 #include "DynamicMemberExpression.h"
