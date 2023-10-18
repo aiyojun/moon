@@ -14,6 +14,9 @@ import {PsiBuilder} from "./ast";
 // Moon -> Engine -> VirtualMachine -> BytecodeGenerator
 // TODO: builtin registering mechanism
 
+/**
+ * @deprecated use scope.ts
+ */
 export class BuiltinProvider {
     constructor(readonly name: string, readonly impl: Function) {
 
@@ -57,7 +60,9 @@ export class Pt {
         return new BlockPt(el)
     }
 }
-
+/**
+ * @deprecated use scope.ts
+ */
 export class Runtime {
     // save identifier and its value
     private _callstack: Array<StkPt> = []

@@ -1,15 +1,7 @@
 #ifndef MOONCPP_PSIUTILS_H
 #define MOONCPP_PSIUTILS_H
 
-#include "antlr4-runtime.h"
-#include "PsiElement.h"
-
-using antlr4::Token;
-using antlr4::tree::ParseTree;
-using antlr4::tree::ParseTreeType;
-using antlr4::tree::TerminalNode;
-using antlr4::ParserRuleContext;
-using antlr4::ANTLRErrorListener;
+#include "psi.h"
 
 class PsiUtils {
 public:

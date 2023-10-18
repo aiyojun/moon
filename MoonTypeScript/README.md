@@ -1,5 +1,5 @@
-# Moon
+# MoonTypeScript
 
-moonlang is the newest version of original lealang.
+Moon Run on Browser.
 
-![Moon](moon.svg)
+The embedded MoonLang runtime written by TypeScript. 

@@ -1,32 +1,7 @@
 #ifndef MOONCPP_PSIBUILDER_H
 #define MOONCPP_PSIBUILDER_H
 
-#include "antlr4-runtime.h"
-#include "PsiUtils.h"
-#include "Program.h"
-#include "MoonParser.h"
-#include "MoonLexer.h"
-#include "VariableDeclaration.h"
-#include "FunctionDeclaration.h"
-#include "Statements.h"
-#include "IfStatement.h"
-#include "WhileStatement.h"
-#include "ForStatement.h"
-#include "ReturnStatement.h"
-#include "ContinueStatement.h"
-#include "BreakStatement.h"
-#include "MemberExpression.h"
-#include "Identifier.h"
-#include "TerminalExpression.h"
-#include "DynamicMemberExpression.h"
-#include "CallExpression.h"
-#include "NewExpression.h"
-#include "AssignmentExpression.h"
-#include "BinaryExpression.h"
-#include "UnaryExpression.h"
-#include "ClassDeclaration.h"
-#include "TryStatement.h"
-#include "ThrowStatement.h"
+#include "psi.h"
 
 class PsiBuilder {
 public:
