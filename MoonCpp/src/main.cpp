@@ -6,8 +6,8 @@ void runMoon(const std::string& path);
 void runTestVariable();
 
 int main(int argc, char* argv[]) {
-    runTestVariable();
-//    runMoon(argv[1]);
+//    runTestVariable();
+    runMoon(argv[1]);
     return 0;
 }
 

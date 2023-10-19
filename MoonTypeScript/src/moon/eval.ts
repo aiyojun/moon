@@ -1,188 +1,257 @@
+// evaluator version 2.0
+
 import {
     AssignmentExpression,
     BinaryExpression,
     CallExpression, DynamicMemberExpression,
-    Expression, FunctionDeclaration, Identifier,
-    Literal, MemberExpression,
+    Expression, Identifier, Literal,
+    MemberExpression,
+    NewExpression,
     PsiElement,
-    ReturnStatement,
     UnaryExpression
 } from "./psi.js";
 import {
-    extractString,
-    isBoolean,
-    isEvalLeaf,
-    isFlatNumber,
-    isIdentifier,
-    isNull,
-    isNumber,
-    isString
-} from "./psiutils.js";
+    ArrayValue,
+    BooleanValue,
+    CallableValue, DeclarativeClassValue,
+    IValue,
+    NumberValue,
+    ObjectValue, Ref,
+    StringValue,
+    ValueSystem
+} from "./valuesystem.js";
+import {ISymbol, ScopeProvider} from "./scope.js";
+import {VirtualMachine} from "./vm.js";
 import {handle} from "./hdl.js";
-import {BuiltinProvider, Pt, MoonScriptEngine} from "./engine.js";
 
 export class Evaluator {
-    constructor(private readonly engine: MoonScriptEngine) {
+    constructor(private scope: ScopeProvider, private vm: VirtualMachine) {
 
     }
 
-    evaluate(expr: Expression): Literal {
-        // console.info(`[LANG] eval ${expr.toString()}`)
-        const stack: any[] = []
-        PsiElement.walk(expr,
-            (el: PsiElement) => {
-                if (el instanceof CallExpression) {
-                    stack.push(this.evalCallExpression(el, el.arguments))
-                    return true
-                }
-                if (el instanceof ReturnStatement) {
-                    if (el.argument !== null) {
-                        stack.push(this.evaluate(el.argument))
-                    } else {
-                        stack.push(Literal.build(null))
-                    }
-                    return true
-                }
-                if (isEvalLeaf(el)) stack.push(el)
-                return false
-            },
-            (el: PsiElement) => {
-                if (el instanceof BinaryExpression) {
-                    const [l, r] = stack.splice(stack.length - 2, 2)
-                    stack.push(this.evalBinaryExpression(el, l, r))
-                    return
-                }
-                if (el instanceof UnaryExpression) {
-                    stack.push(this.evalUnaryExpression(el, stack.pop()))
-                    return
-                }
-                if (el instanceof MemberExpression) {
-                    stack.splice(stack.length - 2)
-                    stack.push(null)
-                    return
-                }
-                if (el instanceof DynamicMemberExpression) {
-                    stack.splice(stack.length - 2)
-                    stack.push(null)
-                    return
-                }
-                if (el instanceof AssignmentExpression) {
-                    const [l, r] = stack.splice(stack.length - 2)
-                    if (!isIdentifier(l))
-                        this.reportException(`${el.textRange().line}:${el.textRange().start}: error: identifier should be provided!`);
-                    stack.push(this.evalAssignmentExpression(l, r))
-                    return
-                }
+    evaluate(exp: Expression): IValue {
+        // console.debug(`scope: \n${this.scope.toString()}`)
+        // console.debug(exp)
+        const valueStack: IValue[] = []
+        PsiElement.walk(exp, (el: Expression) => {
+            if (el instanceof AssignmentExpression && el.left instanceof Identifier) {
+                this.scope.scan(new ISymbol(el.left.name, ValueSystem.buildNull()))
             }
-        )
-        const _r = stack.pop()
-        if (_r instanceof Identifier) {
-            return Literal.build(this.engine.runtime().exchange(_r))
-        } else if (_r instanceof Literal) {
-            return _r
-        } else {
-            return null
-        }
+            if (el instanceof Literal) {
+                valueStack.push(this.handleLiteral(el))
+                return true
+            }
+            if (el instanceof Identifier) {
+                valueStack.push(this.handleIdentifier(el))
+                return true
+            }
+            return false
+        }, (el: Expression) => {
+
+            if (el instanceof DynamicMemberExpression) {
+                const [obj, arg] = valueStack.splice(valueStack.length - 2, 2)
+                valueStack.push(this.handleDynamicMember(el as DynamicMemberExpression, obj, arg))
+                return
+            }
+            if (el instanceof MemberExpression) {
+                valueStack.push(this.handleMember(el as MemberExpression, valueStack.pop()))
+                return
+            }
+            if (el instanceof NewExpression) {
+                valueStack.push(this.handleNew(el as NewExpression))
+                return
+            }
+            if (el instanceof AssignmentExpression) {
+                const [target, value] = valueStack.splice(valueStack.length - 2, 2)
+                valueStack.push(this.handleAssign(el as AssignmentExpression, target, value))
+                return
+            }
+            if (el instanceof UnaryExpression) {
+                valueStack.push(this.handleUnary(el as UnaryExpression, valueStack.pop()))
+                return
+            }
+            if (el instanceof BinaryExpression) {
+                const [left, right] = valueStack.splice(valueStack.length - 2, 2);
+                valueStack.push(this.handleBinary(el as BinaryExpression, left, right))
+                return
+            }
+            if (el instanceof CallExpression) {
+                const nArgs = el.arguments.length
+                const [callee] = valueStack.splice(valueStack.length - 1, 1)
+                const args = valueStack.splice(valueStack.length - nArgs, nArgs)
+                valueStack.push(this.handleCall(el, callee, ...args))
+                return
+            }
+        })
+        // console.debug(`[LANG] EVAL ${exp.toString()} => ${valueStack[valueStack.length - 1]}`)
+        return valueStack.pop()
     }
 
-    private evalAssignmentExpression(left: Identifier, right): Literal {
-        const callstack = this.engine.runtime()
-        const r = this.evaluate(right)
-        callstack.record(left.name, r?.value)
-        return r
-    }
-
-    private evalCallExpression(expr: CallExpression, args: Expression[]): Literal {
-        const callee = expr.callee
-        if (!isIdentifier(callee))
-            this.reportException(`${callee.dumps()} is not callable!`)
-        const functionName = (callee as Identifier).name
-        const callstack = this.engine.runtime()
-        const refs = callstack.ref(functionName)
-        if (refs === null)
-            throw new Error(`error: no such function ${functionName}`)
-        const rArgs = args.map(arg => this.evaluate(arg))
-        const func = refs.get(functionName)
-        // console.info(`[LANG] ${functionName} ( ${rArgs.map(arg => `${arg.value}`).join(', ')} )`)
-        if (func instanceof FunctionDeclaration) {
-            const fnDecl = refs.get(functionName)
-            callstack.push(Pt.call(fnDecl))
-            fnDecl.params.forEach((param, i) => callstack.record(param.name, rArgs[i]))
-            const _r = this.engine.vm().compile(func).invoke(func)
-            callstack.pop()
-            return _r
-        } else if (func instanceof BuiltinProvider) {
-            return Literal.build(func.impl(...rArgs.map(arg => arg.value)))
-        }
-    }
-
-    private evalUnaryExpression(expr: UnaryExpression, e: Literal | Identifier): Literal {
-        const op = expr.operator
-        const ev = e instanceof Identifier ? Literal.build(this.engine.runtime().exchange(e)) : e
-        return handle([
-            {match: () => (isFlatNumber(ev) || isNull(ev)) && op === '!', apply: () => Literal.build(! ev.value)},
-            {match: () => isFlatNumber(ev) && op === '~', apply: () => Literal.build(~ ev.value)},
-            {match: () => isFlatNumber(ev) && op === '+', apply: () => Literal.build(ev.value)},
-            {match: () => isFlatNumber(ev) && op === '-', apply: () => Literal.build(- ev.value)},
-            {match: () => true, apply: () => {throw new Error(`unknown unary expression, operation : ${op}, element : ${JSON.stringify(ev?.dumps())}`)}},
+    private handleLiteral(exp: Literal): IValue {
+        return handle<IValue>([
+            {match: () => (typeof exp.value === 'number'), apply: () => ValueSystem.buildNumber(exp.value)},
+            {match: () => (typeof exp.value === 'boolean'), apply: () => ValueSystem.buildBoolean(exp.value)},
+            {match: () => (typeof exp.value === 'string'), apply: () => ValueSystem.buildString(exp.value)},
+            {match: () => true, apply: () => ValueSystem.buildNull()},
         ])
     }
 
-    private evalBinaryExpression(expr: BinaryExpression, left: Literal | Identifier, right: Literal | Identifier): Literal {
-        const op = expr.operator
-        const lv = left  instanceof Identifier ? Literal.build(this.engine.runtime().exchange(left))  : left
-        const rv = right instanceof Identifier ? Literal.build(this.engine.runtime().exchange(right)) : right
-        return handle([
-            {match: () => isNumber(lv) && isNumber(rv) && op === '+', apply: () => Literal.build(lv.value + rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '-', apply: () => Literal.build(lv.value - rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '*', apply: () => Literal.build(lv.value * rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '/', apply: () => Literal.build(lv.value / rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '%', apply: () => Literal.build(lv.value % rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '^', apply: () => Literal.build(lv.value ^ rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '|', apply: () => Literal.build(lv.value | rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '&', apply: () => Literal.build(lv.value & rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '>', apply: () => Literal.build(lv.value > rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '>=', apply: () => Literal.build(lv.value >= rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '<', apply: () => Literal.build(lv.value < rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '<=', apply: () => Literal.build(lv.value <= rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '==', apply: () => Literal.build(lv.value === rv.value)},
-            {match: () => isNumber(lv) && isNumber(rv) && op === '!=', apply: () => Literal.build(lv.value !== rv.value)},
-            {match: () => isBoolean(lv) && isBoolean(rv) && op === '>', apply: () => Literal.build(lv.value > rv.value)},
-            {match: () => isBoolean(lv) && isBoolean(rv) && op === '>=', apply: () => Literal.build(lv.value >= rv.value)},
-            {match: () => isBoolean(lv) && isBoolean(rv) && op === '<', apply: () => Literal.build(lv.value < rv.value)},
-            {match: () => isBoolean(lv) && isBoolean(rv) && op === '<=', apply: () => Literal.build(lv.value <= rv.value)},
-            {match: () => isBoolean(lv) && isBoolean(rv) && op === '==', apply: () => Literal.build(lv.value === rv.value)},
-            {match: () => isBoolean(lv) && isBoolean(rv) && op === '!=', apply: () => Literal.build(lv.value !== rv.value)},
-            {match: () => isString(lv) && isString(rv) && op === '>', apply: () => Literal.build(lv.value > rv.value)},
-            {match: () => isString(lv) && isString(rv) && op === '>=', apply: () => Literal.build(lv.value >= rv.value)},
-            {match: () => isString(lv) && isString(rv) && op === '<', apply: () => Literal.build(lv.value < rv.value)},
-            {match: () => isString(lv) && isString(rv) && op === '<=', apply: () => Literal.build(lv.value <= rv.value)},
-            {match: () => isString(lv) && isString(rv) && op === '==', apply: () => Literal.build(lv.value === rv.value)},
-            {match: () => isString(lv) && isString(rv) && op === '!=', apply: () => Literal.build(lv.value !== rv.value)},
-            {match: () => isNull(lv) && isNull(rv) && op === '==', apply: () => Literal.build(lv.value === rv.value)},
-            {match: () => isNull(lv) && isNull(rv) && op === '!=', apply: () => Literal.build(lv.value !== rv.value)},
-            {match: () => isString(lv) && isNumber(rv) && op === '+', apply: () => Literal.build(extractString(lv.value) + `${rv.value}`)},
-            {match: () => isString(lv) && isString(rv) && op === '+', apply: () => Literal.build(extractString(lv.value) + extractString(rv.value))},
-            {match: () => isString(lv) && isBoolean(rv) && op === '+', apply: () => Literal.build(extractString(lv.value) + `${rv.value ? 'true' : 'false'}`)},
-            {match: () => isString(lv) && isNull(rv) && op === '+', apply: () => Literal.build(extractString(lv.value) + `${rv.value}`)},
-            {match: () => true, apply: () => {throw new Error(`unknown binary expression, operation : ${op}, left : ${rv}, right : ${rv}`)}},
+    private handleIdentifier(exp: Identifier): IValue {
+        if (!this.scope.contains(exp.name))
+            throw new Error(`error: no such identifier : ${exp.name}`)
+        return this.scope.get(exp.name).value
+    }
+
+    private handleAssign(exp: AssignmentExpression, target: IValue, value: IValue): IValue {
+        if (exp.left instanceof Identifier) {
+            const identifier = exp.left
+            let symbol = this.scope.get(identifier.name)
+            // if (!symbol)
+            //     symbol = new ISymbol(identifier.name, value)
+            symbol.value = value
+            this.scope.scan(symbol)
+            return value
+        }
+        if (!target.hasRef())
+            throw new Error(`error: ${exp.left.toString()} not assignable`)
+        target.getRef().setValue(value)
+        return value
+    }
+
+    private handleCall(exp: CallExpression, callee: IValue, ...args: IValue[]): IValue {
+        if (!(callee instanceof CallableValue))
+            throw new Error(`error: ${callee.toString()} not callable`)
+        // console.debug(`[LANG] args : ${args.map(arg => arg.toString()).join(", ")} `)
+        // console.debug(`[LANG] callee :`, callee)
+        return callee.setScope(this.scope).setVM(this.vm).invoke(...args)
+    }
+
+    private handleDynamicMember(exp: DynamicMemberExpression, obj: IValue, property: IValue): IValue {
+        if (!(obj instanceof ObjectValue))
+            throw new Error(`error: invalid member access : ${property}`)
+        if (obj.isNull())
+            throw new Error(`error: null exception when access : ${property}`)
+        if (property instanceof NumberValue && obj instanceof ArrayValue) {
+            const _r = obj.getItem(property.value)
+            _r.setRef(Ref.refArray(obj, property.value))
+            return _r
+        }
+        if (property instanceof StringValue && obj instanceof ObjectValue) {
+            if (!obj.contains(property.value))
+                throw new Error(`error: no such property : ${property.value}`)
+            const _r = obj.getProperty(property.value)
+            _r.setRef(Ref.refObject(obj, property.value))
+            return _r
+        }
+        throw new Error(`error: invalid member access : ${property.toString()}`)
+    }
+
+    private handleMember(exp: MemberExpression, obj: IValue): IValue {
+        if (!(exp.property instanceof Identifier))
+            throw new Error(`error: invalid member access`)
+        const property = exp.property
+        if (!(obj instanceof ObjectValue))
+            throw new Error(`error: invalid member access : ${property}`)
+        if (obj.isNull())
+            throw new Error(`error: null exception when access : ${property}`)
+        if (!obj.contains(property.name))
+            throw new Error(`error: no such property : ${property}`)
+        const _r = obj.getProperty(property.name)
+        _r.setRef(Ref.refObject(obj, property.name))
+        return _r
+    }
+
+    private handleNew(exp: NewExpression, ...args: IValue[]): ObjectValue {
+        const cls = exp.callee
+        const symbol = this.scope.get(cls.name)
+        if (!symbol)
+            throw new Error(`error: no such class ${cls}`);
+        if (!(symbol.value instanceof DeclarativeClassValue))
+            throw new Error(`error: ${cls.name} not class type`)
+        return ValueSystem.buildDeclarativeObject(symbol.value);
+    }
+
+    private handleUnary(exp: UnaryExpression, arg: IValue): IValue {
+        const op = exp.operator
+        return handle<IValue>([
+            {match: () => op === '!' && arg instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean(! (arg as NumberValue).value)},
+            {match: () => op === '!' && arg instanceof BooleanValue,
+                apply: () => ValueSystem.buildBoolean(! (arg as BooleanValue).value)},
+            {match: () => op === '!' && arg instanceof ObjectValue,
+                apply: () => ValueSystem.buildBoolean((arg as ObjectValue).isNull())},
+            {match: () => op === '~' && arg instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber(~ (arg as NumberValue).value)},
+            {match: () => op === '+' && arg instanceof NumberValue,
+                apply: () => arg},
+            {match: () => op === '-' && arg instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber(- (arg as NumberValue).value)},
+            {match: () => true,
+                apply: () => { throw new Error(`error: invalid unary operation : ${op}, argument : ${arg.toString()}`) }},
         ])
     }
 
-    // private handleMemberExpression(object: any, property: Identifier): any {
-    //     return null
-    // }
-    //
-    // private handleDynamicMemberExpression(object: any, property: Expression): any {
-    //     return null
-    // }
+    private handleBinary(exp: BinaryExpression, left: IValue, right: IValue): IValue {
+        const op = exp.operator
+        return handle<IValue>([
+            { match: () => op === '+' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value + (right as NumberValue).value) },
+            { match: () => op === '+' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildString((left as StringValue).value + (right as StringValue).value) },
+            { match: () => op === '-' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value - (right as NumberValue).value) },
+            { match: () => op === '*' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value * (right as NumberValue).value) },
+            { match: () => op === '/' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value / (right as NumberValue).value) },
+            { match: () => op === '%' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value % (right as NumberValue).value) },
+            { match: () => op === '^' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value ^ (right as NumberValue).value) },
+            { match: () => op === '|' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value | (right as NumberValue).value) },
+            { match: () => op === '&' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildNumber((left as NumberValue).value & (right as NumberValue).value) },
 
-    // private handleException(expr: Expression) {
-    //     this.reportException(`${expr.textRange().line}:${expr.textRange().start}: error: evaluate failed, ${JSON.stringify(expr.dumps())}`)
-    // }
+            { match: () => op === '>' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean((left as NumberValue).value > (right as NumberValue).value) },
+            { match: () => op === '>=' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean((left as NumberValue).value >= (right as NumberValue).value) },
+            { match: () => op === '<' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean((left as NumberValue).value < (right as NumberValue).value) },
+            { match: () => op === '<=' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean((left as NumberValue).value <= (right as NumberValue).value) },
+            { match: () => op === '==' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean((left as NumberValue).value === (right as NumberValue).value) },
+            { match: () => op === '!=' && left instanceof NumberValue && right instanceof NumberValue,
+                apply: () => ValueSystem.buildBoolean((left as NumberValue).value !== (right as NumberValue).value) },
 
-    private reportException(msg: string) {
-        console.error(`program:${msg}`)
-        throw new Error
+            { match: () => op === '>' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildBoolean((left as StringValue).value > (right as StringValue).value) },
+            { match: () => op === '>=' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildBoolean((left as StringValue).value >= (right as StringValue).value) },
+            { match: () => op === '<' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildBoolean((left as StringValue).value < (right as StringValue).value) },
+            { match: () => op === '<=' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildBoolean((left as StringValue).value <= (right as StringValue).value) },
+            { match: () => op === '==' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildBoolean((left as StringValue).value === (right as StringValue).value) },
+            { match: () => op === '!=' && left instanceof StringValue && right instanceof StringValue,
+                apply: () => ValueSystem.buildBoolean((left as StringValue).value !== (right as StringValue).value) },
+
+            { match: () => op === '==' && left instanceof BooleanValue && right instanceof BooleanValue,
+                apply: () => ValueSystem.buildBoolean((left as BooleanValue).value === (right as BooleanValue).value) },
+            { match: () => op === '!=' && left instanceof BooleanValue && right instanceof BooleanValue,
+                apply: () => ValueSystem.buildBoolean((left as BooleanValue).value !== (right as BooleanValue).value) },
+
+            { match: () => op === '==' && left instanceof ObjectValue && right instanceof ObjectValue,
+                apply: () => ValueSystem.buildBoolean((left as ObjectValue) === (right as ObjectValue)) },
+            { match: () => op === '!=' && left instanceof ObjectValue && right instanceof ObjectValue,
+                apply: () => ValueSystem.buildBoolean((left as ObjectValue) !== (right as ObjectValue)) },
+
+            {match: () => true,
+                apply: () => { throw new Error(`error: invalid binary operation : ${op}, left : ${left.toString()}, right : ${right.toString()}`) }},
+        ])
     }
 }
+

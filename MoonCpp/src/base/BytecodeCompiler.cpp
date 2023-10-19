@@ -29,11 +29,13 @@ Literal *BytecodeCompiler::interpret(Evaluator *evaluator) {
             break;
         if (instanceof<BtcEval *>(btc)) {
             evaluator->evaluate(as<BtcEval *>(btc)->getExpression());
+//            std::cout << "eval " << as<BtcEval *>(btc)->getExpression()->toString() << std::endl;
             continue;
         }
         if (instanceof<BtcTest *>(btc)) {
             auto b = as<BtcTest *>(btc);
             auto r = evaluator->evaluate(b->getExpression());
+//            std::cout << "test " << b->getExpression()->toString() << " result : " << r->toString() << std::endl;
             if (!r->getAsBoolean()) {
                 _csip = _lblIdxInUsing[b->getTag()];
             }

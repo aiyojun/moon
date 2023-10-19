@@ -11,7 +11,10 @@ bool SymbolProvider::contains(const std::string &id) {
 Symbol *SymbolProvider::get(const std::string &id) {
     for (int i = (int) _nestedScopes.size() - 1; i > -1; i--) {
         auto _r = _nestedScopes[i]->get(id);
-        if (_r) return _r;
+        if (_r) {
+//            std::cout << " get " << id << " = " << _r->get()->toString() << std::endl;
+            return _r;
+        }
     }
     return nullptr;
 }

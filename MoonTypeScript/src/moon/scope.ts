@@ -1,97 +1,32 @@
-import {ClassDeclaration, FunctionDeclaration, Identifier, Literal, PsiElement, VariableDeclaration} from "./psi";
-
-const isNot = (cls, obj) => !(obj instanceof cls)
-
-export class LightObject extends PsiElement {
-    private _properties: Map<string, PsiElement> = new Map;
-
-    set(property: string, value: PsiElement) {
-        if (isNot(Literal, value) && isNot(LightObject, value))
-            throw new Error(`invalid right value when set LightObject property`)
-        this._properties.set(property, value)
-        return this
-    }
-
-    get(property: string) {
-        return this._properties.get(property)
-    }
-
-    contains(property: string) {
-        return this._properties.has(property)
-    }
-}
-
-export class FunctionObject extends LightObject {
-
-}
-
-export abstract class BuiltinFunctionObject extends FunctionObject {
-    abstract impl(...args: Literal[]): Literal;
-}
-
-export class DeclarativeFunctionObject extends FunctionObject {
-    private _decl: FunctionDeclaration = null
-
-    set decl(fd: FunctionDeclaration) {
-        this._decl = fd
-    }
-
-    get decl() {
-        return this._decl
-    }
-}
-
-export class ClassObject extends LightObject {
-
-}
-
-export class BuiltinClassObject extends ClassObject {
-
-}
-
-export class DeclarativeClassObject extends ClassObject {
-    private _decl: ClassDeclaration = null
-
-    set decl(cd: ClassDeclaration) {
-        this._decl = cd
-    }
-
-    get decl() {
-        return this._decl
-    }
-}
-
-// Don't expose the two below to outside.
-function createDeclarativeFunctionObject(fd: FunctionDeclaration) {
-    const _r = new DeclarativeFunctionObject()
-    _r.decl = fd
-    return _r
-}
-
-function createDeclarativeClassObject(cd: ClassDeclaration) {
-    const _r = new DeclarativeClassObject()
-    _r.decl = cd
-    return _r
-}
+import {ClassDeclaration, FunctionDeclaration, VariableDeclaration} from "./psi.js";
+import {IValue, ValueSystem} from "./valuesystem.js";
 
 export class Scope {
-    private _symbols: Map<string, Symbol> = new Map;
+    private _symbols: Map<string, ISymbol> = new Map;
 
     contains(name: string): boolean {
         return this._symbols.has(name)
     }
 
-    get(name: string): Symbol {
+    get(name: string): ISymbol {
         return this._symbols.get(name)
     }
 
-    add(symbol: Symbol) {
+    add(symbol: ISymbol) {
         this._symbols.set(symbol.getName(), symbol)
     }
 
     remove(name: string) {
         this._symbols.delete(name)
         return this
+    }
+
+    toString(): string {
+        let ss = ''
+        for (const entry of this._symbols) {
+            ss += `  ${entry[0]} : ${entry[1].value.toString()}\n`
+        }
+        return ss
     }
 }
 
@@ -110,15 +45,18 @@ export class ScopeProvider {
         return false
     }
 
-    get(name: string): Symbol {
+    get(name: string): ISymbol {
         for (let i = this._scopes.length - 1; i > -1; i--) {
             const _r = this._scopes[i].get(name)
-            if (_r) return _r
+            if (_r) {
+                // console.debug(`[LANG] get`, name, "=", _r.value.toString())
+                return _r
+            }
         }
         return null
     }
 
-    add(symbol: Symbol) {
+    add(symbol: ISymbol) {
         this._scopes[this._scopes.length - 1].add(symbol)
         return this
     }
@@ -132,46 +70,51 @@ export class ScopeProvider {
         return this._scopes.pop()
     }
 
-    scan(symbol: Symbol) {
+    scan(symbol: ISymbol) {
+        if (!symbol.value)
+            throw new Error(`error: invalid symbol : ${symbol.value?.toString()}`)
+        // console.debug(`[LANG] scan`, symbol.getName(), "=", symbol.value.toString())
         const sym = this.get(symbol.getName())
         if (!sym) {
             this.add(symbol);
             return this;
         }
-        sym.value = sym.value;
+        sym.value = symbol.value;
+    }
+
+    toString() {
+        let ss = ''
+        for (let i = 0; i < this._scopes.length; i++) {
+            ss += this._scopes[i].toString();
+        }
+        return ss
     }
 }
 
-export class Symbol {
-    private _id: Identifier = null
+export class ISymbol {
+    private _id: string = null
 
-    private _value: PsiElement = null
+    private _value: IValue = null
 
-    constructor(id: Identifier, value: PsiElement) {
+    constructor(id: string, value: IValue) {
         this._id = id
         this.value = value
     }
 
     getName(): string {
-        return this._id.name
+        return this._id
     }
 
     get value() {
         return this._value
     }
 
-    set value(value: PsiElement) {
-        if (isNot(Literal, value) && isNot(LightObject, value))
-            throw new Error(`invalid right value when set Symbol value`)
+    set value(value: IValue) {
         this._value = value
     }
 
-    callable() {
-        return this._value instanceof FunctionObject
-    }
-
     toString() {
-        return this._id.name + " : " + this._value?.toString()
+        return this._id + " : " + this._value?.toString()
     }
 }
 
@@ -183,12 +126,12 @@ export class Organizer {
     }
 
     scanClass(decl: ClassDeclaration) {
-        this.setGlobalSymbol(decl.id.name, createDeclarativeClassObject(decl))
+        this.setGlobalSymbol(decl.id.name, ValueSystem.buildDeclarativeClass(decl))
         return this
     }
 
     scanFunction(decl: FunctionDeclaration) {
-        this.setGlobalSymbol(decl.id.name, createDeclarativeFunctionObject(decl))
+        this.setGlobalSymbol(decl.id.name, ValueSystem.buildDeclarativeFunction(decl))
         return this
     }
 
@@ -196,8 +139,8 @@ export class Organizer {
         // todo:
     }
 
-    setGlobalSymbol(name: string, value: PsiElement) {
-        this._globalScope.add(new Symbol(Identifier.build(name), value))
+    setGlobalSymbol(name: string, value: IValue) {
+        this._globalScope.add(new ISymbol(name, value))
         return this
     }
 

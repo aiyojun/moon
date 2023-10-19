@@ -9,10 +9,11 @@ import {
     FunctionDeclaration,
     IfStatement,
     ReturnStatement,
-    WhileStatement, Literal
+    WhileStatement
 } from "./psi.js";
 import {Evaluator} from "./eval.js";
-import {MoonScriptEngine} from "./engine.js";
+import {ISymbol, ScopeProvider} from "./scope";
+import {IValue, ValueSystem} from "./valuesystem";
 
 // here, build linear bytecode
 // build code flow by psi(function&statement)
@@ -101,8 +102,8 @@ export class BytecodeCompiler {
 
     private _csip: number
 
-    constructor(readonly evaluator: Evaluator) {
-    }
+    // constructor(readonly evaluator: Evaluator) {
+    // }
 
     bytecode(): Bytecode[] {
         return this._bytecodes
@@ -118,25 +119,34 @@ export class BytecodeCompiler {
         return this
     }
 
-    interpret(): Literal { // jit
+    private _riskCount: number = 0;
+
+    interpret(evaluator: Evaluator): IValue { // jit
         this._csip = -1
+        this._riskCount = 0
         while (1) {
+            this._riskCount++
+            if (this._riskCount > 100) {
+                throw new Error(`vm risk`)
+            }
             const btc = this.next()
             if (!btc)
                 break
             if (btc instanceof BtcEval) {
-                this.evaluator.evaluate(btc.expression)
+                // console.debug(`[LANG] eval`, btc.expression.toString())
+                evaluator.evaluate(btc.expression)
                 continue
             }
             if (btc instanceof BtcTest) {
-                const r = this.evaluator.evaluate(btc.expression)
-                if (!r.value) {
+                const r = evaluator.evaluate(btc.expression)
+                // console.debug(`[LANG] test`, btc.expression.toString(), "=>", r.toString())
+                if (!ValueSystem.isTrue(r)) {
                     this._csip = this._theUsedLblIdx.get(btc.tag)
                 }
                 continue
             }
             if (btc instanceof BtcRet) {
-                return btc.expression ? this.evaluator.evaluate(btc.expression) : null
+                return btc.expression ? evaluator.evaluate(btc.expression) : null
             }
         }
         return null
@@ -314,17 +324,30 @@ export class BytecodeCompiler {
 export class VirtualMachine {
     private _btc: Map<FunctionDeclaration, BytecodeCompiler> = new Map
 
-    constructor(private engine: MoonScriptEngine) {
+    constructor() {
 
     }
 
     compile(func: FunctionDeclaration) {
         if (this._btc.has(func)) return this
-        this._btc.set(func, new BytecodeCompiler(this.engine.evaluator()).compile(func))
+        this._btc.set(func, new BytecodeCompiler().compile(func))
+        // this._btc.set(func, new BytecodeCompiler(this.engine.evaluator()).compile(func))
         return this
     }
 
-    invoke(func: FunctionDeclaration): Literal {
-        return this._btc.get(func).interpret()
+    invoke(scope: ScopeProvider, func: FunctionDeclaration, args: IValue[]): IValue {
+        scope.buildScope()
+        for (let i = 0; i < func.params.length; i++) {
+            scope.scan(new ISymbol(func.params[i].name, args[i]))
+        }
+        const evaluator = new Evaluator(scope, this)//.setScope(scope).setVM(this)
+        const _r = this._btc.get(func).interpret(evaluator)
+        scope.popScope()
+        return _r
+    }
+
+    evaluate(scope: ScopeProvider, expr: Expression): IValue {
+        const evaluator = new Evaluator(scope, this)//.setScope(scope).setVM(this)
+        return evaluator.evaluate(expr)
     }
 }

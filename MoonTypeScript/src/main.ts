@@ -1,9 +1,32 @@
 import {MoonScriptEngine} from "./moon/engine.js";
 
 const text = `
-def main(argc, argv) {
-    println("Hello World! Nice to meet you! I'm Moon~");
-    return 0;
+class Hello {
+    x = null;
+    
+    y = null;
+    
+    def print() {
+        println("Halo");
+    }
+}
+
+def printHello(h) {
+    println("Class Hello.x : ", h.x);
+    println("Class Hello.y : ", h.y);
+    return 1 + 2;
+}
+
+def main() {
+    println("Hello World!", " Nice to meet you! I'm Moon~");
+    
+    y = new Hello();
+    
+    y.x = "hehe";
+    
+    y.y = 12;
+    
+    println(printHello(y));
 }
 `
 new MoonScriptEngine()

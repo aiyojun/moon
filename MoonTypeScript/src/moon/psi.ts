@@ -20,6 +20,9 @@ export class PsiElement {
     textRange(): TextRange { return this._textRange }
 
     relate(p: PsiElement) {
+        // if (p !== null && p instanceof CallExpression) {
+        //     console.info(`[LANG] CallExpression relate ->`, p)
+        // }
         this._parent = p
         if (p._children.indexOf(p) === -1)
             p._children.push(this)
@@ -38,7 +41,8 @@ export class PsiElement {
     toString(): string { return "" }
 
     static walk(el: PsiElement, onBefore: (e: PsiElement) => boolean, onAfter: (e: PsiElement) => void = null) {
-        if (!el || onBefore(el)) return
+        if (!el) return
+        if (onBefore(el)) return
         for (const child of el.children()) {
             PsiElement.walk(child, onBefore, onAfter)
         }
@@ -216,7 +220,10 @@ export class NewExpression extends Expression {
     arguments: Expression[] = [];
     private _callee: Identifier;
     get callee(): Identifier { return this._callee }
-    set callee(id: Identifier) { this._callee = id; this._callee?.relate(this) }
+    set callee(id: Identifier) {
+        this._callee = id;
+        // this._callee?.relate(this)
+    }
     dumps(): Record<string, any> {
         return {...super.dumps(), type: "NewExpression", callee: this._callee?.dumps(), arguments: this.arguments.map(arg => arg?.dumps())};
     }
@@ -232,7 +239,7 @@ export class CallExpression extends Expression {
         return {...super.dumps(), type: "CallExpression", callee: this._callee?.dumps(), arguments: this.arguments.map(arg => arg?.dumps())};
     }
     toString(): string {
-        return `${this._callee.toString()}(${this.arguments.map(arg => arg.toString()).join(', ')})`
+        return `${this._callee?.toString()}(${this.arguments.map(arg => arg.toString()).join(', ')})`
     }
 }
 
@@ -242,7 +249,7 @@ export class MemberExpression extends Expression {
     get object_(): Expression { return this._object_ }
     set object_(e: Expression) { this._object_ = e; this._object_?.relate(this) }
     get property(): Expression { return this._property }
-    set property(e: Expression) { this._property = e; this._property?.relate(this) }
+    set property(e: Expression) { this._property = e; }
     dumps(): Record<string, any> {
         return {...super.dumps(), type: "MemberExpression", "object": this._object_?.dumps(), property: this._property?.dumps()};
     }
@@ -251,7 +258,13 @@ export class MemberExpression extends Expression {
     }
 }
 
-export class DynamicMemberExpression extends MemberExpression {
+export class DynamicMemberExpression extends Expression {
+    protected _object_: Expression;
+    protected _property: Expression;
+    get object_(): Expression { return this._object_ }
+    set object_(e: Expression) { this._object_ = e; this._object_?.relate(this) }
+    get property(): Expression { return this._property }
+    set property(e: Expression) { this._property = e; this._property?.relate(this) }
     dumps(): Record<string, any> {
         return {...super.dumps(), type: "DynamicMemberExpression", "object": this._object_?.dumps(), property: this._property?.dumps()};
     }

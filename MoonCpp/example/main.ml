@@ -8,4 +8,8 @@ def main() {
     } else {
         println("else ", x);
     }
+    while (x < 20) {
+        x = x + 5;
+        println("while ", x);
+    }
 }

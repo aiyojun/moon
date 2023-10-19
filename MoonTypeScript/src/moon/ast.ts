@@ -157,7 +157,6 @@ export class PsiBuilder {
         let index = 1
         let iter = conditions[0]
         while (index < conditions.length) {
-            // conditions[index].relate(iter)
             iter.alternate = conditions[index]
             iter = conditions[index]
             index++
@@ -181,14 +180,12 @@ export class PsiBuilder {
             l.update = tree.children[semi[1] + 1] instanceof ExpressionContext
                 ? this.handleExpression(tree.children[semi[1] + 1] as ExpressionContext) : null
             l.body = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
-            // l.init?.relate(l); l.test?.relate(l); l.update?.relate(l); l.body.relate(l)
             return l
         } else {
             const l = new ForeachStatement().loc(this.location(tree))
             l.left  = this.handleExpression(tree.children[2] as ExpressionContext)
             l.right = this.handleExpression(tree.children[4] as ExpressionContext)
             l.body  = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
-            // l.left.relate(l); l.right.relate(l); l.body.relate(l)
             return l
         }
     }
@@ -197,14 +194,12 @@ export class PsiBuilder {
         const w = new WhileStatement().loc(this.location(tree))
         w.test = this.handleExpression(tree.children[2] as ExpressionContext)
         w.body = this.handleBlockStatement(tree.children[4] as BlockStatementContext)
-        // w.test.relate(w); w.body.relate(w)
         return w
     }
 
     handleReturnStatement(tree: ReturnStatementContext): ReturnStatement {
         const r = new ReturnStatement().loc(this.location(tree))
         r.argument = tree.children.length === 2 ? this.handleExpression(tree.children[1] as ExpressionContext) : null
-        // r.argument?.relate(r)
         return r
     }
 
@@ -273,8 +268,15 @@ export class PsiBuilder {
 
     handleAccessExpression(obj, tree: AccessExpressionContext) {
         const seq = this.unfoldAccessExpression(tree)
-        let index = 0
+        if (seq.length === 0) return obj
+        let index: number
         let iObj = obj
+        if (obj instanceof NewExpression && seq[0] instanceof CallExpression) {
+            obj.arguments = seq[0].arguments
+            index = 1
+        } else {
+            index = 0;
+        }
         while (index < seq.length) {
             seq[index].relate(iObj)
             if (seq[index] instanceof CallExpression) {
@@ -282,11 +284,6 @@ export class PsiBuilder {
             } else {
                 (seq[index] as MemberExpression).object_ = iObj
             }
-            // if (Object.hasOwn(seq[index], "callee")) {
-            //     (seq[index] as any).callee  = iObj
-            // } else {
-            //     (seq[index] as any).object_ = iObj
-            // }
             iObj = seq[index]
             index++
         }
@@ -295,50 +292,50 @@ export class PsiBuilder {
 
     handleMemberExpression(obj, id: TerminalNode) {
         const call = new MemberExpression()
-        call.object_ = obj//.relate(call)
-        call.property = this.handleIdentifier(id)//.relate(call)
+        call.object_ = obj
+        call.property = this.handleIdentifier(id)
         return call
     }
 
     handleDynamicMemberExpression(obj, expr: ExpressionContext) {
         const call = new DynamicMemberExpression()
-        call.object_ = obj//?.relate(call)
-        call.property = this.handleExpression(expr)//.relate(call)
+        call.object_ = obj
+        call.property = this.handleExpression(expr)
         return call
     }
 
     handleCallExpression(obj, args: ArgumentsContext) {
         const call = new CallExpression()
-        call.callee = obj//?.relate(call)
+        call.callee = obj
         call.arguments = this.unfoldArguments(args).map(a => a.relate(call))
         return call
     }
 
     handleNewExpression(callee: TerminalNode, _arguments: Array<ExpressionContext>) {
         const newObj = new NewExpression()
-        newObj.callee = this.handleIdentifier(callee)//.relate(newObj)
+        newObj.callee = this.handleIdentifier(callee)
         return newObj
     }
 
     handleAssignmentExpression(left: ExpressionContext, right: ExpressionContext) {
         const assignment = new AssignmentExpression()
-        assignment.left = this.handleExpression(left)//.relate(assignment)
-        assignment.right = this.handleExpression(right)//.relate(assignment)
+        assignment.left = this.handleExpression(left)
+        assignment.right = this.handleExpression(right)
         return assignment
     }
 
     handleBinaryExpression(operator: TerminalNode, left: ExpressionContext, right: ExpressionContext) {
         const binary = new BinaryExpression()
         binary.operator = operator.getText()
-        binary.left = this.handleExpression(left)//.relate(binary)
-        binary.right = this.handleExpression(right)//.relate(binary)
+        binary.left = this.handleExpression(left)
+        binary.right = this.handleExpression(right)
         return binary
     }
 
     handleUnaryExpression(operator: TerminalNode, argument: ExpressionContext, prefix: boolean = true) {
         const unary = new UnaryExpression()
         unary.operator = operator.getText()
-        unary.argument = this.handleExpression(argument)//.relate(unary)
+        unary.argument = this.handleExpression(argument)
         unary.prefix = prefix
         return unary
     }

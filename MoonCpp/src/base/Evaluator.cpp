@@ -34,6 +34,7 @@ void Evaluator::onAfter(PsiElement *e) {
         auto rv = _stack[_stack.size() - 1];
         _stack.pop_back(); _stack.pop_back();
         _stack.emplace_back(handleBinaryExpression(el, lv, rv));
+//        std::cout << "binary result " << _stack.back()->toString() << std::endl;
         return;
     }
     if (instanceof<UnaryExpression *>(e)) {
@@ -76,6 +77,9 @@ Literal *Evaluator::evaluate(Expression *expression) {
 
 Literal *Evaluator::handleAssignmentExpression(AssignmentExpression *expr, TerminalExpression *left, TerminalExpression *right) {
     auto _r = evaluate(right);
+//    std::cout << "eva  " << left->toString() << " = " << _r->toString() << std::endl;
+//    std::cout << "assn " << as<Identifier *>(left)->getName() << " = " << _r->toString() << std::endl;
+//    std::cout << "scan " << symbol->getName() << " = " << symbol->get()->toString() << std::endl;
     _symbols->scan(Symbol::build(as<Identifier *>(left), _r));
     return _r;
 }
@@ -132,16 +136,18 @@ Literal *Evaluator::handleBinaryExpression(BinaryExpression *expr, TerminalExpre
                 ? _symbols->get(as<Identifier *>(_rv)->getName())->getAs<Literal *>()
                 : _rv;
     auto rv = dynamic_cast<Literal *>(_rv_);
+//    std::cout << "binary " << left->toString() << " " << op << " " << right->toString() << std::endl;
+//    std::cout << "lv " << lv->toString() << " " << op << " " << rv->toString() << "\n" << (op == "+") << lv->isInteger() << " " << rv->isInteger() << std::endl;
 //    std::cout << "[LANG] Binary \n  left : " << lv->toString() << "\n  right : " << rv->toString() << std::endl;
-    if (op == "+" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() + rv->isInteger()); }
-    if (op == "-" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() - rv->isInteger()); }
-    if (op == "*" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() * rv->isInteger()); }
-    if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() / rv->isInteger()); }
-    if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() / rv->isInteger()); }
-    if (op == "%" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() % rv->isInteger()); }
-    if (op == "^" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() ^ rv->isInteger()); }
-    if (op == "|" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() | rv->isInteger()); }
-    if (op == "&" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->isInteger() & rv->isInteger()); }
+    if (op == "+" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() + rv->getAsInteger()); }
+    if (op == "-" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() - rv->getAsInteger()); }
+    if (op == "*" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() * rv->getAsInteger()); }
+    if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() / rv->getAsInteger()); }
+    if (op == "/" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() / rv->getAsInteger()); }
+    if (op == "%" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() % rv->getAsInteger()); }
+    if (op == "^" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() ^ rv->getAsInteger()); }
+    if (op == "|" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() | rv->getAsInteger()); }
+    if (op == "&" && lv->isInteger() && rv->isInteger()) { return Literal::build(lv->getAsInteger() & rv->getAsInteger()); }
 
     if (op == "+" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() + rv->getAsNumber()); }
     if (op == "-" && lv->isNumeric() && rv->isNumeric()) { return Literal::build(lv->getAsNumber() - rv->getAsNumber()); }
