@@ -38,3 +38,21 @@ void SymbolProvider::add(Symbol *symbol) {
     auto scope = _nestedScopes.back();
     scope->add(symbol);
 }
+
+SymbolProvider *SymbolProvider::derive(Scope *scope) {
+    std::vector<Scope *> _r;
+    _r.reserve(_nestedScopes.size() + 1);
+    for (auto & _nestedScope : _nestedScopes) {
+        _r.emplace_back(_nestedScope);
+    }
+    _r.emplace_back(scope);
+    return new SymbolProvider(_r);
+}
+
+std::string SymbolProvider::toString() {
+    std::string stream;
+    for (int i = 0; i < _nestedScopes.size(); i++) {
+        stream.append(_nestedScopes[i]->toString());
+    }
+    return stream;
+}

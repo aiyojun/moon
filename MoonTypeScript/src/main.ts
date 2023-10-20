@@ -7,7 +7,12 @@ class Hello {
     y = null;
     
     def print() {
-        println("Halo");
+        println("Halo ", self);
+        println(self.add(1, 3));
+    }
+    
+    def add(a, b) {
+        return a + b;
     }
 }
 
@@ -19,20 +24,17 @@ def printHello(h) {
 
 def main() {
     println("Hello World!", " Nice to meet you! I'm Moon~");
-    
     y = new Hello();
-    
-    y.x = "hehe";
-    
-    y.y = 12;
-    
-    println(printHello(y));
+    y.x = 12;
+    // println(y.add(1, 3));
+    y.print();
+    // y.x = "hehe";
+    // y.y = 12;
+    // println(printHello(y));
 }
 `
 new MoonScriptEngine()
     .compile(text)
     .run()
 
-const moon = new MoonScriptEngine()
-
-window["moon"] = moon
+window['ml'] = function (text) { return new MoonScriptEngine().compile(text).run();  }

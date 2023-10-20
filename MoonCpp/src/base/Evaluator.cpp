@@ -9,6 +9,9 @@
 #include "BuiltinProvider.h"
 
 bool Evaluator::onBefore(PsiElement *e) {
+    if (_checkpoints.find(e) != _checkpoints.end())
+        return true;
+    _checkpoints.emplace(e);
     if (instanceof<CallExpression *>(e)) {
         _stack.emplace_back(handleCallExpression(as<CallExpression *>(e)));
         return true;
@@ -66,6 +69,7 @@ Literal *Evaluator::evaluate(Expression *expression) {
     if (instanceof<Identifier *>(expression))
     { return _symbols->get(as<Identifier *>(expression)->getName())->getAs<Literal *>(); }
     _stack.clear();
+    _checkpoints.clear();
     walk(expression);
     auto _r = _stack.back();
     if (!_r) return nullptr;
@@ -80,7 +84,7 @@ Literal *Evaluator::handleAssignmentExpression(AssignmentExpression *expr, Termi
 //    std::cout << "eva  " << left->toString() << " = " << _r->toString() << std::endl;
 //    std::cout << "assn " << as<Identifier *>(left)->getName() << " = " << _r->toString() << std::endl;
 //    std::cout << "scan " << symbol->getName() << " = " << symbol->get()->toString() << std::endl;
-    _symbols->scan(Symbol::build(as<Identifier *>(left), _r));
+    _symbols->scan(Symbol::build(as<Identifier *>(left)->getName(), _r));
     return _r;
 }
 

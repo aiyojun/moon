@@ -1,6 +1,6 @@
-import {ClassDeclaration, FunctionDeclaration} from "./psi";
-import {ScopeProvider} from "./scope";
-import {VirtualMachine} from "./vm";
+import {ClassDeclaration, FunctionDeclaration} from "./psi.js";
+import {ISymbol, Scope, ScopeProvider} from "./scope.js";
+import {VirtualMachine} from "./vm.js";
 
 export class Ref {
     private _ptr: ObjectValue = null
@@ -57,19 +57,27 @@ export class IValue {
         return this
     }
 
-    toString(): string { return 'IValue' }
+    toString(): string {
+        return 'IValue'
+    }
 }
 
 export class BaseValue extends IValue {
-    toString(): string { return 'BaseValue' }
+    toString(): string {
+        return 'BaseValue'
+    }
 }
 
 export class NumberValue extends BaseValue {
     private _value: number;
 
-    set value(v: number) { this._value = v }
+    set value(v: number) {
+        this._value = v
+    }
 
-    get value(): number { return this._value }
+    get value(): number {
+        return this._value
+    }
 
     constructor(v: number) {
         super();
@@ -84,9 +92,13 @@ export class NumberValue extends BaseValue {
 export class BooleanValue extends BaseValue {
     private _value: boolean;
 
-    set value(v: boolean) { this._value = v }
+    set value(v: boolean) {
+        this._value = v
+    }
 
-    get value(): boolean { return this._value }
+    get value(): boolean {
+        return this._value
+    }
 
     constructor(v: boolean) {
         super();
@@ -128,6 +140,8 @@ export class ObjectValue extends IValue {
                 _r[entry[0]] = entry[1].value
             } else if (entry[1] instanceof NumberValue) {
                 _r[entry[0]] = entry[1].value
+            } else if (entry[1] instanceof CallableValue) {
+
             } else if (entry[1] instanceof ObjectValue && entry[1].isNull()) {
                 _r[entry[0]] = null
             } else {
@@ -169,9 +183,13 @@ export class StringValue extends ObjectValue {
         this._value = v
     }
 
-    get value() { return this._value }
+    get value() {
+        return this._value
+    }
 
-    set value(v: string) { this._value = v }
+    set value(v: string) {
+        this._value = v
+    }
 
     toString(): string {
         return this._value;
@@ -218,8 +236,17 @@ export abstract class BuiltinFunctionValue extends CallableValue {
 }
 
 export class MethodValue extends CallableValue {
+    constructor(private readonly clazz: ClassDeclaration, private readonly decl: FunctionDeclaration, private obj: ObjectValue) {
+        super();
+    }
+
     invoke(...args: IValue[]): IValue {
-        return undefined;
+        this._scope.buildScope()
+        const _s = new Scope()
+        _s.add(new ISymbol('self', this.obj))
+        const _r = this._vm.invoke(this._scope.derive(_s), this.decl, args)
+        this._scope.popScope()
+        return _r;
     }
 }
 
@@ -240,6 +267,9 @@ export class DeclarativeObjectValue extends ObjectValue {
         this._isNull = false
         for (const variable of clazz.decl.variables) {
             this.setProperty(variable.id.name, ValueSystem.buildNull())
+        }
+        for (const method of clazz.decl.methods) {
+            this.setProperty(method.id.name, ValueSystem.buildMethod(clazz.decl, method, this));
         }
     }
 
@@ -269,6 +299,10 @@ export class ValueSystem {
         return new DeclarativeFunctionValue(decl)
     }
 
+    static buildMethod(clazz: ClassDeclaration, decl: FunctionDeclaration, obj: ObjectValue): MethodValue {
+        return new MethodValue(clazz, decl, obj)
+    }
+
     static buildDeclarativeClass(decl: ClassDeclaration): DeclarativeClassValue {
         return new DeclarativeClassValue(decl)
     }
@@ -279,8 +313,8 @@ export class ValueSystem {
 
     static isTrue(v: IValue): boolean {
         if (v instanceof ObjectValue) return !v.isNull()
-        if (v instanceof NumberValue) return !v.value
-        if (v instanceof BooleanValue) return !v.value
+        if (v instanceof NumberValue) return v.value !== 0
+        if (v instanceof BooleanValue) return v.value
         return false
     }
 }

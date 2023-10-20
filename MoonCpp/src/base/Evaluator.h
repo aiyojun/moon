@@ -39,7 +39,9 @@ private:
 
     VirtualMachine *_vm;
 
-    std::vector<TerminalExpression *> _stack;
+    std::vector<IValue *> _stack;
+
+    std::set<PsiElement *> _checkpoints;
 };
 
 

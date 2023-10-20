@@ -2,6 +2,9 @@
 #include "BytecodeCompiler.h"
 #include "SyntaxError.h"
 #include "Evaluator.h"
+#include "Evaluation.h"
+#include "ValueSystem.h"
+#include "debug/Debugger.h"
 
 int BytecodeCompiler::_lblCount = 0;
 
@@ -21,22 +24,24 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
     optimize();
 }
 
-Literal *BytecodeCompiler::interpret(Evaluator *evaluator) {
+IValue *BytecodeCompiler::interpret(Evaluation *evaluator) {
     _csip = -1;
+    std::cout << "BytecodeCompiler::interpret" << std::endl;
     while (true) {
         auto btc = next();
         if (!btc)
             break;
         if (instanceof<BtcEval *>(btc)) {
             evaluator->evaluate(as<BtcEval *>(btc)->getExpression());
-//            std::cout << "eval " << as<BtcEval *>(btc)->getExpression()->toString() << std::endl;
+//            Debug() << "eval : " << as<BtcEval *>(btc)->getExpression() << Debugger::_end;
+            std::cout << "eval : " << as<BtcEval *>(btc)->getExpression() << std::endl;
             continue;
         }
         if (instanceof<BtcTest *>(btc)) {
             auto b = as<BtcTest *>(btc);
             auto r = evaluator->evaluate(b->getExpression());
-//            std::cout << "test " << b->getExpression()->toString() << " result : " << r->toString() << std::endl;
-            if (!r->getAsBoolean()) {
+            std::cout << "test : " << b->getExpression() << " result : " << r << std::endl;
+            if (!ValueSystem::isTrue(r)) {
                 _csip = _lblIdxInUsing[b->getTag()];
             }
             continue;

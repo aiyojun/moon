@@ -69,7 +69,8 @@ breakStatement: 'break';
 
 
 expression
-    : ('!' | '~' | '+' | '-') expression
+    : expression ('--' | '++')
+    | ('!' | '~' | '+' | '-' | '--' | '++') expression
     | expression ('*' | '/' | '%') expression
     | expression ('+' | '-') expression
     | expression ('>=' | '<=' | '>' | '<') expression
@@ -82,7 +83,7 @@ expression
     | <assoc=right> expression '?' expression ':' expression
     | ('new' ID | ID | '(' expression ')') (accessExpression | )
     | (NUMBER | HEX | OCT | BIN | STRING | 'true' | 'false' | 'null')
-    | <assoc=right> expression '=' expression
+    | <assoc=right> expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=') expression
     ;
 accessExpression
     : accessExpression accessExpression

@@ -12,6 +12,7 @@
 #include "WhileStatement.h"
 #include "ForStatement.h"
 #include "ReturnStatement.h"
+#include "Evaluation.h"
 
 class Bytecode {
 public:
@@ -102,7 +103,7 @@ public:
 
     void compile(FunctionDeclaration *func);
 
-    Literal *interpret(Evaluator *evaluator);
+    IValue *interpret(Evaluation *evaluator);
 
 private:
     Bytecode *next();

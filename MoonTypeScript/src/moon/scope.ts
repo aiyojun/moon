@@ -37,6 +37,10 @@ export class ScopeProvider {
         this._scopes = scopes
     }
 
+    derive(scope): ScopeProvider {
+        return new ScopeProvider([...this._scopes, scope])
+    }
+
     contains(name: string): boolean {
         for (let i = this._scopes.length - 1; i > -1; i--) {
             if (this._scopes[i].contains(name))

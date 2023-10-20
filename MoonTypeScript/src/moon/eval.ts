@@ -33,9 +33,16 @@ export class Evaluator {
         // console.debug(`scope: \n${this.scope.toString()}`)
         // console.debug(exp)
         const valueStack: IValue[] = []
+        const checkpoints: Set<PsiElement> = new Set
         PsiElement.walk(exp, (el: Expression) => {
+            if (checkpoints.has(el)) {
+                // console.warn(`[LANG] checkpoint exception`)
+                return true
+            }
+            checkpoints.add(el)
             if (el instanceof AssignmentExpression && el.left instanceof Identifier) {
-                this.scope.scan(new ISymbol(el.left.name, ValueSystem.buildNull()))
+                if (!this.scope.contains(el.left.name))
+                    this.scope.scan(new ISymbol(el.left.name, ValueSystem.buildNull()))
             }
             if (el instanceof Literal) {
                 valueStack.push(this.handleLiteral(el))
@@ -47,7 +54,6 @@ export class Evaluator {
             }
             return false
         }, (el: Expression) => {
-
             if (el instanceof DynamicMemberExpression) {
                 const [obj, arg] = valueStack.splice(valueStack.length - 2, 2)
                 valueStack.push(this.handleDynamicMember(el as DynamicMemberExpression, obj, arg))

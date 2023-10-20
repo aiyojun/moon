@@ -13,6 +13,9 @@ include_directories(
     src/psi
     src/moon
     src/scope
+    src/vars
+    src/debug
+    src/error
 )
 
 add_executable(moon
@@ -41,7 +44,7 @@ add_executable(moon
     src/base/PsiUtils.cpp
     src/base/MoonScriptEngine.cpp
     src/base/BytecodeCompiler.cpp
-    src/base/Evaluator.cpp
+#    src/base/Evaluator.cpp
     src/base/VirtualMachine.cpp
     src/moon/Console.cpp
     src/scope/Symbol.cpp
@@ -52,6 +55,24 @@ add_executable(moon
     src/parser/MoonListener.cpp
     src/parser/MoonVisitor.cpp
     src/gc/Variable.cpp
+    src/vars/IValue.cpp
+    src/vars/Ref.cpp
+    src/vars/BaseValue.cpp
+    src/vars/NumberValue.cpp
+    src/vars/BooleanValue.cpp
+    src/vars/ObjectValue.cpp
+    src/vars/ArrayValue.cpp
+    src/vars/StringValue.cpp
+    src/vars/CallableValue.cpp
+    src/vars/DeclarativeFunctionValue.cpp
+    src/vars/BuiltinFunctionValue.cpp
+    src/vars/MethodValue.cpp
+    src/vars/DeclarativeClassValue.cpp
+    src/vars/DeclarativeObjectValue.cpp
+    src/vars/ValueSystem.cpp
+    src/base/Evaluation.cpp
+    src/scope/Organizer.cpp
+    src/debug/Debugger.cpp
 )
 
 target_link_libraries(moon C:/Users/jun.dai/Documents/GitHub/moon/MoonCpp/lib/x64/antlr4-runtime.lib)

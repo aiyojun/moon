@@ -1,8 +1,8 @@
-import {Organizer} from "./scope";
+import {Organizer} from "./scope.js";
 import {CallExpression, ClassDeclaration, FunctionDeclaration, Identifier, Literal, Program,} from "./psi.js";
 import {VirtualMachine} from "./vm.js";
-import {PsiBuilder} from "./ast";
-import {BuiltinFunctionValue, IValue} from "./valuesystem";
+import {PsiBuilder} from "./ast.js";
+import {BuiltinFunctionValue, IValue} from "./valuesystem.js";
 
 // Moon -> Engine -> VirtualMachine -> BytecodeGenerator
 // TODO: builtin registering mechanism
@@ -35,7 +35,7 @@ export class MoonScriptEngine {
     }
 
     compile(program: string) {
-        console.debug(`[LANG] compile`)
+        // console.debug(`[LANG] compile`)
         this._program = this._builder.compile(program).program()
         for (const decl of this._program.body) {
             if (decl instanceof FunctionDeclaration) {
@@ -52,7 +52,7 @@ export class MoonScriptEngine {
     }
 
     run() {
-        console.debug(`[LANG] run`)
+        // console.debug(`[LANG] run`)
         const _main = new CallExpression()
         _main.callee = Identifier.build("main")
         _main.arguments = [Literal.build(0), Literal.build(null)]

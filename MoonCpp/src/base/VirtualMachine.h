@@ -1,25 +1,30 @@
 #ifndef MOONCPP_VIRTUALMACHINE_H
 #define MOONCPP_VIRTUALMACHINE_H
 
-#include "FunctionDeclaration.h"
-#include "Literal.h"
-#include "BytecodeCompiler.h"
-#include "SymbolProvider.h"
+#include <map>
+#include <vector>
 
-class MoonScriptEngine;
+class FunctionDeclaration;
+
+class BytecodeCompiler;
+
+class SymbolProvider;
+
+class Expression;
+
+class IValue;
 
 class VirtualMachine {
 public:
-    explicit VirtualMachine(MoonScriptEngine* engine): _engine(engine) {}
+    VirtualMachine() = default;
 
     void compile(FunctionDeclaration *funcDecl);
 
-    Literal *invoke(SymbolProvider *tbl, FunctionDeclaration *fnt, std::vector<Literal *> args);
+    IValue *invoke(SymbolProvider *tbl, FunctionDeclaration *fnt, std::vector<IValue *> args);
 
-    Literal *evaluate(SymbolProvider *tbl, Expression *exp);
+    IValue *evaluate(SymbolProvider *tbl, Expression *exp);
 
 private:
-    MoonScriptEngine* _engine;
 
     std::map<FunctionDeclaration *, BytecodeCompiler *> _btc;
 };

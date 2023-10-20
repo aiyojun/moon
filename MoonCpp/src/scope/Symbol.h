@@ -6,6 +6,7 @@
 #include "VariableDeclaration.h"
 #include "ClassDeclaration.h"
 #include "Literal.h"
+#include "IValue.h"
 
 class Symbol {
 public:
@@ -16,28 +17,28 @@ public:
     template<class T>
     T getAs();
 
-    PsiElement *get() { return _value; }
+    IValue *get() { return _value; }
 
-    static Symbol *build(Identifier *id, PsiElement *value);
+    static Symbol *build(const std::string& id, IValue *value);
 
-    const std::string& getName() { return _id->getName(); }
+    const std::string& getName() { return _id; }
 
     std::string toString();
 
-    void setValue(PsiElement *value);
+    void setValue(IValue *value);
 
     bool callable() { return _type == BUILTIN_FUNCTION || _type == DECL_FUNCTION; }
 
     bool isBuiltinFunction() { return _type == BUILTIN_FUNCTION; }
 
 private:
-    Symbol(Identifier *id, PsiElement *value, SymbolType type)
-            : _id(id), _value(value), _type(type) {}
+    Symbol(std::string id, IValue *value, SymbolType type)
+            : _id(std::move(id)), _value(value), _type(type) {}
 
 private:
-    Identifier *_id;
+    std::string _id;
 
-    PsiElement *_value;
+    IValue *_value;
 
     SymbolType _type;
 };

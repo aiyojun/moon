@@ -17,6 +17,11 @@ public:
 };
 
 void runTestVariable() {
+//    int a = 12;
+//    a += a;
+//    ++(a++);
+//    std::cout << a << std::endl;
+//    exit(0);
     auto x = new Array;
     auto p0 = new Variable(x);
     {

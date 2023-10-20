@@ -1,9 +1,9 @@
 #ifndef MOONCPP_SCOPE_H
 #define MOONCPP_SCOPE_H
 
+#include "Symbol.h"
 #include <map>
 #include <string>
-#include "Symbol.h"
 
 class Scope {
 public:
@@ -14,6 +14,12 @@ public:
     Symbol *get(const std::string &id) { return _symbols[id]; }
 
     void add(Symbol *symbol);
+
+    void remove(const std::string &id);
+
+    std::string toString();
+
+    int getNumber();
 
 private:
     std::string _name;

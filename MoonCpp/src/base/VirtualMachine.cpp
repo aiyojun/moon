@@ -1,7 +1,6 @@
 #include "VirtualMachine.h"
-#include "MoonScriptEngine.h"
 #include "BytecodeCompiler.h"
-#include "Evaluator.h"
+#include "Evaluation.h"
 
 void VirtualMachine::compile(FunctionDeclaration *funcDecl) {
     if (_btc.find(funcDecl) != _btc.end()) return;
@@ -10,19 +9,22 @@ void VirtualMachine::compile(FunctionDeclaration *funcDecl) {
     _btc[funcDecl]->compile(funcDecl);
 }
 
-Literal *VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, std::vector<Literal *> args) {
+IValue *VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, std::vector<IValue *> args) {
     tbl->buildScope();
     for (int i = 0; i < decl->getParams().size(); i++) {
         auto param = decl->getParams()[i];
-        tbl->scan(Symbol::build(param, args[i]));
+        tbl->scan(Symbol::build(param->getName(), args[i]));
     }
-    auto evaluator = new Evaluator(_engine, this, tbl);
+    auto evaluator = new Evaluation(tbl, this);
+    if (_btc.find(decl) == _btc.end())
+        compile(decl);
     auto _r = _btc[decl]->interpret(evaluator);
     tbl->popScope();
     return _r;
 }
 
-Literal *VirtualMachine::evaluate(SymbolProvider *tbl, Expression *exp) {
-    auto evaluator = new Evaluator(_engine, this, tbl);
+IValue *VirtualMachine::evaluate(SymbolProvider *scope, Expression *exp) {
+//    std::cout << "VirtualMachine::evaluate : "  << std::endl;
+    auto evaluator = new Evaluation(scope, this);
     return evaluator->evaluate(exp);
 }

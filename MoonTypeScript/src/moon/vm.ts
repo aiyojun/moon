@@ -341,6 +341,8 @@ export class VirtualMachine {
             scope.scan(new ISymbol(func.params[i].name, args[i]))
         }
         const evaluator = new Evaluator(scope, this)//.setScope(scope).setVM(this)
+        if (!this._btc.has(func))
+            this.compile(func)
         const _r = this._btc.get(func).interpret(evaluator)
         scope.popScope()
         return _r

@@ -5,7 +5,7 @@
 
 class SymbolProvider {
 public:
-    explicit SymbolProvider(std::vector<Scope *> scopes) : _nestedScopes(std::move(scopes)) {}
+    explicit SymbolProvider(const std::vector<Scope *>& scopes) : _nestedScopes(scopes) {}
 
     bool contains(const std::string& id);
 
@@ -18,6 +18,10 @@ public:
     void popScope();
 
     void scan(Symbol *symbol);
+
+    SymbolProvider *derive(Scope *scope);
+
+    std::string toString();
 
 private:
     std::vector<Scope *> _nestedScopes;

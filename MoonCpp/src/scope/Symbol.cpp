@@ -1,13 +1,16 @@
 #include "Symbol.h"
 #include "types.h"
+#include "values.h"
 #include "BuiltinProvider.h"
 
-Symbol *Symbol::build(Identifier *id, PsiElement *value) {
-    if (instanceof<Literal *>(value)) { return new Symbol(id, value, LITERAL); }
-    if (instanceof<BuiltinProvider *>(value)) { return new Symbol(id, value, BUILTIN_FUNCTION); }
-    if (instanceof<ClassDeclaration *>(value)) { return new Symbol(id, value, DECL_CLASS); }
-    if (instanceof<VariableDeclaration *>(value)) { return new Symbol(id, value, DECL_VARIABLE); }
-    if (instanceof<FunctionDeclaration *>(value)) { return new Symbol(id, value, DECL_FUNCTION); }
+Symbol *Symbol::build(const std::string& id, IValue *value) {
+    if (instanceof<BaseValue *>(value)) { return new Symbol(id, value, LITERAL); }
+    if (instanceof<StringValue *>(value)) { return new Symbol(id, value, LITERAL); }
+    if (instanceof<BuiltinFunctionValue *>(value)) { return new Symbol(id, value, BUILTIN_FUNCTION); }
+    if (instanceof<DeclarativeFunctionValue *>(value)) { return new Symbol(id, value, DECL_FUNCTION); }
+    if (instanceof<MemberExpression *>(value)) { return new Symbol(id, value, DECL_FUNCTION); }
+    if (instanceof<DeclarativeClassValue *>(value)) { return new Symbol(id, value, DECL_CLASS); }
+//    if (instanceof<VariableDeclaration *>(value)) { return new Symbol(id, value, DECL_VARIABLE); }
     return nullptr;
 }
 
@@ -35,7 +38,7 @@ std::string Symbol::toString() {
     return std::move(ss);
 }
 
-void Symbol::setValue(PsiElement *value) {
+void Symbol::setValue(IValue *value) {
     if (instanceof<Literal *>(value)) { _type = LITERAL; _value = value; return; }
     if (instanceof<BuiltinProvider *>(value)) { _type = BUILTIN_FUNCTION; _value = value; return; }
     if (instanceof<ClassDeclaration *>(value)) { _type = DECL_CLASS; _value = value; return; }

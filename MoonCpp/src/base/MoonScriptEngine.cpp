@@ -1,18 +1,18 @@
 #include "MoonScriptEngine.h"
 #include "PsiBuilder.h"
 #include "VirtualMachine.h"
-#include "Evaluator.h"
 #include "types.h"
 #include "Console.h"
 #include "SymbolProvider.h"
-#include "BuiltinProvider.h"
+#include "BuiltinFunctionValue.h"
+#include "debug/Debugger.h"
 
-class BuiltinPrintln : public BuiltinProvider {
+class BuiltinPrintln : public BuiltinFunctionValue {
 public:
-    Literal *apply(const std::vector<Literal *> &args) override;
+    IValue *invoke(std::vector<IValue *> args) override;
 };
 
-Literal *BuiltinPrintln::apply(const std::vector<Literal *> &args) {
+IValue *BuiltinPrintln::invoke(std::vector<IValue *> args) {
     std::string stream;
     for (auto arg : args) {
         stream.append(arg->toString());
@@ -23,9 +23,9 @@ Literal *BuiltinPrintln::apply(const std::vector<Literal *> &args) {
 
 MoonScriptEngine::MoonScriptEngine()
         :
-          _globalScope(new Scope),
+          _org(new Organizer),
           _builder(new PsiBuilder),
-          _vm(new VirtualMachine(this)),
+          _vm(new VirtualMachine()),
           _program(nullptr) {
 }
 
@@ -34,18 +34,28 @@ void MoonScriptEngine::compile(const std::string &path) {
     _program = _builder->getProgram();
     for (auto decl: _program->getBody()) {
         // todo:
+        Debug() << "decl : " << decl << Debugger::_end;
         if (instanceof<FunctionDeclaration *>(decl)) {
             auto func = dynamic_cast<FunctionDeclaration *>(decl);
-            _globalScope->add(Symbol::build(func->getId(), func));
+            _org->scanFunction(func);
+//            _globalScope->add(Symbol::build(func->getId()->getName(), func));
             _vm->compile(func);
             continue;
         }
+        if (instanceof<ClassDeclaration *>(decl)) {
+            _org->scanClass(as<ClassDeclaration *>(decl));
+        }
     }
-    _globalScope->add(Symbol::build(Identifier::build("println"), new BuiltinPrintln));
+    _org->setGlobalSymbol("println", new BuiltinPrintln);
+    std::cout << "Organizer : \n---" << _org->getGlobalSymbolNumber() << "\n" << _org->toString() << "\n---" << std::endl;
+//    Debug() << "Organizer : " << _org->toString() << Debugger::_end;
+//    Debug() << "Global symbol table : \n" << _org->createFunctionScope()->toString() << Debugger::_end;
+//    _globalScope->add(Symbol::build("println", new BuiltinPrintln));
 }
 
-Literal *MoonScriptEngine::run() {
+IValue *MoonScriptEngine::run() {
     auto _main = new CallExpression;
     _main->setCallee(Identifier::build("main"));
-    return _vm->evaluate(createFunctionScope(), _main);
+    return _vm->evaluate(_org->createFunctionScope(), _main);
+//    return _vm->evaluate(createFunctionScope(), _main);
 }
