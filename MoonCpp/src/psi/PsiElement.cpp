@@ -1,15 +1,20 @@
 #include "PsiElement.h"
 #include "PsiUtils.h"
+#include "types.h"
 
 using antlr4::Token;
 using antlr4::tree::TerminalNode;
 using antlr4::ParserRuleContext;
 
 PsiElement *PsiElement::relate(PsiElement *p) {
+    if (p == nullptr) return this;
     _parent = p;
-    if (std::find(p->_children.begin(),
-                  p->_children.end(), p) == p->_children.end())
-        p->_children.emplace_back(this);
+    auto &children = _parent->_children;
+    if (std::find(children.begin(),
+                  children.end(), this) == children.end()) {
+//        std::cout << "relate " << ( p ? to_string(p->toJson()) : "null") << "  => " << to_string(this->toJson()) << std::endl;
+        children.emplace_back(this);
+    }
     return this;
 }
 
@@ -36,4 +41,23 @@ std::string PsiElement::toString() {
         stream.append(child->toString());
     }
     return stream;
+}
+
+PsiElement *PsiElement::mount() {
+    if (!instanceof<Literal *>(this) && !instanceof<Identifier *>(this)) {
+        std::cout << "!!! mount " << to_string(toJson()) <<  std::endl;
+    }
+    return this;
+}
+
+nlohmann::json PsiElement::toJson() {
+    return {};
+}
+
+nlohmann::json PsiElement::toJsonTree() {
+    auto arr = json::array();
+    for (const auto &item: children()) {
+        arr.emplace_back(item->toJsonTree());
+    }
+    return {{"children", arr}};
 }

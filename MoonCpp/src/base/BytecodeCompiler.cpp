@@ -1,7 +1,6 @@
 #include "types.h"
 #include "BytecodeCompiler.h"
 #include "SyntaxError.h"
-#include "Evaluator.h"
 #include "Evaluation.h"
 #include "ValueSystem.h"
 #include "debug/Debugger.h"
@@ -17,7 +16,8 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
     _lblCount = 0;
     auto lc = labels();
     _stack.emplace_back(std::map<std::string, std::string>{
-        {"type", "function"}, {"end", lc[0]}});
+            {"type", "function"},
+            {"end",  lc[0]}});
     handleBlockStatement(func->getBody());
     emitMark(lc[0]);
     _stack.pop_back();
@@ -26,21 +26,19 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
 
 IValue *BytecodeCompiler::interpret(Evaluation *evaluator) {
     _csip = -1;
-    std::cout << "BytecodeCompiler::interpret" << std::endl;
     while (true) {
         auto btc = next();
         if (!btc)
             break;
         if (instanceof<BtcEval *>(btc)) {
             evaluator->evaluate(as<BtcEval *>(btc)->getExpression());
-//            Debug() << "eval : " << as<BtcEval *>(btc)->getExpression() << Debugger::_end;
-            std::cout << "eval : " << as<BtcEval *>(btc)->getExpression() << std::endl;
+//            std::cout << "eval : " << as<BtcEval *>(btc)->getExpression()->toString() << std::endl;
             continue;
         }
         if (instanceof<BtcTest *>(btc)) {
             auto b = as<BtcTest *>(btc);
             auto r = evaluator->evaluate(b->getExpression());
-            std::cout << "test : " << b->getExpression() << " result : " << r << std::endl;
+//            std::cout << "test : " << b->getExpression()->toString() << " result : " << r << std::endl;
             if (!ValueSystem::isTrue(r)) {
                 _csip = _lblIdxInUsing[b->getTag()];
             }
@@ -76,7 +74,7 @@ Bytecode *BytecodeCompiler::next() {
 
 void BytecodeCompiler::optimize() {
     std::vector<Bytecode *> _r;
-    for (auto bc : _bytecodes) {
+    for (auto bc: _bytecodes) {
         if (instanceof<BtcMark *>(bc)) {
             auto b = as<BtcMark *>(bc);
             if (_lblIdxInUsing.find(b->getTag()) == _lblIdxInUsing.end()) {
@@ -107,7 +105,7 @@ void BytecodeCompiler::handleIfStatement(IfStatement *stmt) {
 }
 
 void BytecodeCompiler::handleBlockStatement(BlockStatement *stmts) {
-    for (auto stmt : stmts->getBody()) {
+    for (auto stmt: stmts->getBody()) {
         if (instanceof<Expression *>(stmt)) {
             emitEval(as<Expression *>(stmt));
         } else if (instanceof<BreakStatement *>(stmt)) {
@@ -129,7 +127,9 @@ void BytecodeCompiler::handleBlockStatement(BlockStatement *stmts) {
 void BytecodeCompiler::handleWhileStatement(WhileStatement *stmt) {
     auto lc = labels(2);
     _stack.emplace_back(std::map<std::string, std::string>{
-        {"type", "while"}, {"test", lc[0]}, {"end", lc[1]}});
+            {"type", "while"},
+            {"test", lc[0]},
+            {"end",  lc[1]}});
     emitMark(lc[0]);
     emitTest(lc[1], stmt->getTest());
     handleBlockStatement(stmt->getBody());
@@ -141,7 +141,9 @@ void BytecodeCompiler::handleWhileStatement(WhileStatement *stmt) {
 void BytecodeCompiler::handleForStatement(ForStatement *stmt) {
     auto lc = labels(3);
     _stack.emplace_back(std::map<std::string, std::string>{
-        {"type", "for"}, {"update", lc[2]}, {"end", lc[1]}});
+            {"type",   "for"},
+            {"update", lc[2]},
+            {"end",    lc[1]}});
     emitEval(stmt->getInit());
     emitMark(lc[0]);
     emitTest(lc[1], stmt->getTest());

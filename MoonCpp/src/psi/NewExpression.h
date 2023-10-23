@@ -12,6 +12,12 @@ public:
 
     Identifier *getCallee() { return _callee; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     std::vector<Expression *> _arguments;
 

@@ -15,10 +15,16 @@ public:
 
     BlockStatement *getBody() { return _body; }
 
-private:
-    Expression* _test = nullptr;
+    PsiElement *mount() override;
 
-    BlockStatement* _body = nullptr;
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
+private:
+    Expression *_test = nullptr;
+
+    BlockStatement *_body = nullptr;
 };
 
 

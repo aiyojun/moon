@@ -13,6 +13,10 @@ public:
 
     static Identifier *build(const std::string &name);
 
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     std::string _name;
 };

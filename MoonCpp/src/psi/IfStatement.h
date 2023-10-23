@@ -19,6 +19,12 @@ public:
 
     Statement *getAlternate() { return _alternate; }
 
+    PsiElement * mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Expression *_test = nullptr;
 

@@ -13,6 +13,12 @@ public:
 
     Expression *getProperty() { return _property; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Expression *_object = nullptr;
 

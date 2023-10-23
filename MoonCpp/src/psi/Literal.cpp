@@ -204,6 +204,20 @@ Literal *Literal::buildNull() {
     return _r;
 }
 
+json Literal::toJson() {
+    return {
+            {"type", "Literal"},
+            {"value", toString()},
+    };
+}
+
+nlohmann::json Literal::toJsonTree() {
+    auto _j = PsiElement::toJsonTree();
+    _j["type"] = "Literal";
+    _j["value"] = toString();
+    return _j;
+}
+
 
 
 

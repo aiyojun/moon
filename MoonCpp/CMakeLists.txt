@@ -44,7 +44,6 @@ add_executable(moon
     src/base/PsiUtils.cpp
     src/base/MoonScriptEngine.cpp
     src/base/BytecodeCompiler.cpp
-#    src/base/Evaluator.cpp
     src/base/VirtualMachine.cpp
     src/moon/Console.cpp
     src/scope/Symbol.cpp
@@ -73,6 +72,11 @@ add_executable(moon
     src/base/Evaluation.cpp
     src/scope/Organizer.cpp
     src/debug/Debugger.cpp
+        src/psi/BlockStatement.cpp
+        src/psi/Program.cpp
+        src/psi/BreakStatement.cpp
+        src/psi/ContinueStatement.cpp
+        src/psi/DynamicMemberExpression.cpp
 )
 
 target_link_libraries(moon C:/Users/jun.dai/Documents/GitHub/moon/MoonCpp/lib/x64/antlr4-runtime.lib)

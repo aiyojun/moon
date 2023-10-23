@@ -20,6 +20,12 @@ public:
 
     std::string toString() override;
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     bool _prefix;
 

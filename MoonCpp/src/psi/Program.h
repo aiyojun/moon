@@ -9,6 +9,12 @@ class Program : public PsiElement {
 public:
     std::vector<Declaration *> &getBody() { return _body; }
 
+    PsiElement * mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     std::vector<Declaration *> _body;
 };

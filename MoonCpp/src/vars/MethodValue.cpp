@@ -6,10 +6,10 @@ MethodValue::MethodValue(ClassDeclaration *clazz, FunctionDeclaration *decl, Obj
 }
 
 IValue *MethodValue::invoke(std::vector<IValue *> args) {
-    _scope->buildScope();
     auto _s = new Scope;
     _s->add(Symbol::build("self", _obj));
+    _scope->buildScope();
     auto _r = _vm->invoke(_scope->derive(_s), _decl, args);
     _scope->popScope();
-    return nullptr;
+    return _r;
 }

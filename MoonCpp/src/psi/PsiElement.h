@@ -1,12 +1,13 @@
 #ifndef MOONCPP_PSIELEMENT_H
 #define MOONCPP_PSIELEMENT_H
 
+#include "json.hpp"
+using nlohmann::json;
+
 #include <vector>
 #include <string>
-
 #include "TextRange.h"
 #include "antlr4-runtime.h"
-
 using antlr4::tree::ParseTree;
 
 class PsiElement {
@@ -19,9 +20,15 @@ public:
 
     PsiElement *relate(PsiElement *p);
 
+    virtual PsiElement *mount();
+
     PsiElement *loc(ParseTree *tree);
 
     virtual std::string toString();
+
+    virtual nlohmann::json toJson();
+
+    virtual nlohmann::json toJsonTree();
 
 private:
     TextRange _textRange;

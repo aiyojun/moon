@@ -17,6 +17,12 @@ void PsiBuilder::compile(const std::string &path) {
     parser.addErrorListener(new MoonCompileErrorListener);
     try {
         _program = handleProgram(parser.program());
+//        std::cout << "program address : " << _program << std::endl;
+//        std::cout << "## JSON : \n" << to_string(_program->toJson()) << std::endl;
+//        std::cout << "[LANG] mount\n";
+        _program->mount();
+//        std::cout << "[LANG] mount complete\n";
+//        std::cout << "## TREE : \n" << to_string(_program->toJsonTree()) << std::endl;
     } catch (std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
@@ -40,6 +46,7 @@ Declaration *PsiBuilder::handleMember(MoonParser::MemberContext *tree) {
 
 ClassDeclaration *PsiBuilder::handleClassDeclaration(MoonParser::ClassDeclarationContext *tree) {
     auto _r = new ClassDeclaration;
+    _r->setId(handleIdentifier(tree->ID()[0]));
     std::vector<Declaration *> vec;
     unfoldMembers(vec, tree->members());
     for (Declaration *m: vec) {
@@ -49,6 +56,7 @@ ClassDeclaration *PsiBuilder::handleClassDeclaration(MoonParser::ClassDeclaratio
             _r->getMethods().emplace_back(dynamic_cast<FunctionDeclaration *>(m));
         }
     }
+//    std::cout << "-- class decl : " << _r->getId()->getName() << std::endl;
     return _r;
 }
 
@@ -65,6 +73,7 @@ FunctionDeclaration *PsiBuilder::handleFunctionDeclaration(MoonParser::FunctionD
     if (tree->params())
         this->unfoldParams(_r->getParams(), tree->params());
     _r->setBody(handleBlockStatement(tree->blockStatement()));
+//    std::cout << "-- func decl : " << _r->getId()->getName() << " => " << to_string(_r->toJson()) << std::endl;
     return _r;
 }
 
@@ -152,7 +161,9 @@ BlockStatement *PsiBuilder::handleBlockStatement(MoonParser::BlockStatementConte
 
 Expression *PsiBuilder::handleExpression(MoonParser::ExpressionContext *tree) {
     if (PsiUtils::isExpressionContext(tree->children[0])) {
-        if (tree->children.size() == 3) {
+        if (tree->children.size() == 2) {
+            return handleUnaryExpression(tree);
+        } else if (tree->children.size() == 3) {
             auto mid = tree->children[1];
             if (PsiUtils::isTerm(mid) && mid->getText() == "=") {
                 return handleAssignmentExpression(tree);
@@ -190,19 +201,24 @@ Expression *PsiBuilder::handleAccessExpression(MoonParser::ExpressionContext *tr
         unfoldAccessExpression(vec, tree->accessExpression());
         auto p = _r;
         int idx = 0;
+        if (instanceof<NewExpression *>(p) && !vec.empty() && instanceof<CallExpression *>(vec[0])) {
+            as<NewExpression *>(p)->getArguments() = as<CallExpression *>(vec[0])->getArguments();
+            idx = 1;
+        }
         while (idx < vec.size()) {
             if (instanceof<CallExpression *>(vec[idx])) {
-                dynamic_cast<CallExpression *>(vec[idx])->setCallee(p);
+                as<CallExpression *>(vec[idx])->setCallee(p);
             } else if (instanceof<DynamicMemberExpression *>(vec[idx])) {
-                dynamic_cast<DynamicMemberExpression *>(vec[idx])->setObject(p);
+                as<DynamicMemberExpression *>(vec[idx])->setObject(p);
             } else if (instanceof<MemberExpression *>(vec[idx])) {
-                dynamic_cast<MemberExpression *>(vec[idx])->setObject(p);
+                as<MemberExpression *>(vec[idx])->setObject(p);
             }
             p = vec[idx];
             idx++;
         }
-        _r = vec.back();
+        _r = p; // vec.back();
     }
+//    std::cout << "access : " << to_string(_r->toJson()) << std::endl;
     return _r;
 }
 

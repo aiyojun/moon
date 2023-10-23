@@ -70,6 +70,10 @@ public:
 
     static Literal *buildNull();
 
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Storage _storage;
 

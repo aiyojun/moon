@@ -10,6 +10,12 @@ public:
 
     Expression *getArgument() { return _argument; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Expression *_argument = nullptr;
 };

@@ -9,7 +9,7 @@ std::vector<IValue *> splice(std::vector<IValue *>& vec, int length) {
         throw SyntaxError("splice empty vector");
     std::vector<IValue *> _r;
     int size = (int) vec.size();
-    for (int i = size - length; i < length; i++) {
+    for (int i = 0; i < length; i++) {
         _r.emplace_back(vec[size - 1 - i]);
         vec.pop_back();
     }
@@ -19,19 +19,18 @@ std::vector<IValue *> splice(std::vector<IValue *>& vec, int length) {
 
 Evaluation::Evaluation(SymbolProvider *scope, VirtualMachine *vm)
     : _scope(scope), _vm(vm) {
-
 }
 
 IValue *Evaluation::evaluate(Expression *exp) {
-//    Debug() << "evaluate scope : " << _scope->toString() << Debugger::_end;
-//    Debug() << "evaluate " << exp << Debugger::_end;
-    std::cout << "evaluate " << exp->toString() << std::endl;
-    std::cout << "evaluate scope : " << _scope->toString() << std::endl;
-    _valueStack.clear();
+//    std::cout << "evaluate " << exp->toString() << std::endl;
+//    if (!_scope) {
+//        std::cout << "warning: without scope" << std::endl;
+//    }
+//    std::cout << "evaluate scope : \n" << _scope->toString() << std::endl;
+    _vstack.clear();
     _checkpoints.clear();
     walk(exp);
-//    Debug() << "evaluate " << exp << " => " << _valueStack.back() << Debugger::_end;
-    return !_valueStack.empty() ? _valueStack.back() : nullptr;
+    return !_vstack.empty() ? _vstack.back() : nullptr;
 }
 
 bool Evaluation::onBefore(PsiElement *e) {
@@ -40,7 +39,6 @@ bool Evaluation::onBefore(PsiElement *e) {
         return true;
     }
     _checkpoints.insert(e);
-    std::cout << "onBefore " << (e ? e->toString() : "null") << std::endl;
     if (instanceof<AssignmentExpression *>(e) && instanceof<Identifier *>(as<AssignmentExpression *>(e)->getLeft())) {
         auto left = as<Identifier *>(as<AssignmentExpression *>(e)->getLeft());
         if (!_scope->contains(left->getName())) {
@@ -48,51 +46,50 @@ bool Evaluation::onBefore(PsiElement *e) {
         }
     }
     if (instanceof<Literal *>(e)) {
-        _valueStack.emplace_back(handleLiteral(as<Literal *>(e)));
+        _vstack.emplace_back(handleLiteral(as<Literal *>(e)));
         return true;
     }
     if (instanceof<Identifier *>(e)) {
-        _valueStack.emplace_back(handleIdentifier(as<Identifier *>(e)));
+        _vstack.emplace_back(handleIdentifier(as<Identifier *>(e)));
         return true;
     }
     return false;
 }
 
 void Evaluation::onAfter(PsiElement *el) {
-    std::cout << "onAfter " << (el ? el->toString() : "null") << std::endl;
+//    std::cout << "onAfter " << (el ? el->toString() : "null") << std::endl;
     if (instanceof<DynamicMemberExpression *>(el)) {
-        auto rr(splice(_valueStack, 2));
-        _valueStack.emplace_back(handleDynamicMember(as<DynamicMemberExpression *>(el), rr[0], rr[1]));
+        auto rr(splice(_vstack, 2));
+        _vstack.emplace_back(handleDynamicMember(as<DynamicMemberExpression *>(el), rr[0], rr[1]));
         return;
     }
     if (instanceof<MemberExpression *>(el)) {
-        auto rr(splice(_valueStack, 1));
-        _valueStack.emplace_back(handleMember(as<MemberExpression *>(el), rr[0]));
+        auto rr(splice(_vstack, 1));
+        _vstack.emplace_back(handleMember(as<MemberExpression *>(el), rr[0]));
         return;
     }
     if (instanceof<NewExpression *>(el)) {
-        _valueStack.emplace_back(handleNew(as<NewExpression *>(el), {}));
+        _vstack.emplace_back(handleNew(as<NewExpression *>(el), {}));
         return;
     }
     if (instanceof<AssignmentExpression *>(el)) {
-        auto rr(splice(_valueStack, 2));
-        _valueStack.emplace_back(handleAssign(as<AssignmentExpression *>(el), rr[0], rr[1]));
+        auto rr(splice(_vstack, 2));
+        _vstack.emplace_back(handleAssign(as<AssignmentExpression *>(el), rr[0], rr[1]));
         return;
     }
     if (instanceof<UnaryExpression *>(el)) {
-        _valueStack.emplace_back(handleUnary(as<UnaryExpression *>(el), {}));
+        _vstack.emplace_back(handleUnary(as<UnaryExpression *>(el), {}));
         return;
     }
     if (instanceof<BinaryExpression *>(el)) {
-        auto rr(splice(_valueStack, 2));
-        _valueStack.emplace_back(handleBinary(as<BinaryExpression *>(el), rr[0], rr[1]));
+        auto rr(splice(_vstack, 2));
+        _vstack.emplace_back(handleBinary(as<BinaryExpression *>(el), rr[0], rr[1]));
         return;
     }
     if (instanceof<CallExpression *>(el)) {
-        std::cout << "call : " << el->toString() << "_value stack size : " << _valueStack.size() << std::endl;
-        auto callee = splice(_valueStack, 1)[0];
-        auto args(splice(_valueStack, (int) as<CallExpression *>(el)->getArguments().size()));
-        _valueStack.emplace_back(handleCall(as<CallExpression *>(el), callee, args));
+        auto args(splice(_vstack, (int) as<CallExpression *>(el)->getArguments().size()));
+        auto callee = splice(_vstack, 1)[0];
+        _vstack.emplace_back(handleCall(as<CallExpression *>(el), callee, args));
         return;
     }
 }
@@ -313,5 +310,5 @@ IValue *Evaluation::handleBinary(BinaryExpression *exp, IValue *left, IValue *ri
     if (op == "!=" && instanceof<ObjectValue *>(left) && instanceof<ObjectValue *>(right))
         return ValueSystem::buildBoolean(left != right);
 
-    throw SyntaxError("error: invalid unary operation : " + op + ", left : " + left->toString() + ", right : " + right->toString());
+    throw SyntaxError("error: invalid binary operation : " + op + ", left : " + left->toString() + ", right : " + right->toString());
 }

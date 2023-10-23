@@ -7,24 +7,30 @@
 
 class TryStatement : public Statement {
 public:
-    void setBlock(BlockStatement* s);
+    void setBlock(BlockStatement *s);
 
-    void setHandler(CatchStatement* s);
+    void setHandler(CatchStatement *s);
 
-    void setFinalizer(BlockStatement* s);
+    void setFinalizer(BlockStatement *s);
 
-    BlockStatement* getBlock() {return _block;}
+    BlockStatement *getBlock() { return _block; }
 
-    CatchStatement* getHandler() {return _handler;}
+    CatchStatement *getHandler() { return _handler; }
 
-    BlockStatement* getFinalizer() {return _finalizer;}
+    BlockStatement *getFinalizer() { return _finalizer; }
+
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
 
 private:
-    BlockStatement* _block = nullptr;
+    BlockStatement *_block = nullptr;
 
-    CatchStatement* _handler = nullptr;
+    CatchStatement *_handler = nullptr;
 
-    BlockStatement* _finalizer = nullptr;
+    BlockStatement *_finalizer = nullptr;
 };
 
 

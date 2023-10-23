@@ -17,6 +17,12 @@ public:
 
     std::vector<Identifier *> &getParams() { return _params; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Identifier *_id;
 

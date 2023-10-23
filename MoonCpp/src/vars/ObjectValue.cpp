@@ -1,4 +1,5 @@
 #include "ObjectValue.h"
+#include "BaseValue.h"
 
 ObjectValue::ObjectValue() : IValue() {}
 
@@ -11,5 +12,14 @@ void ObjectValue::setProperty(const std::string &name, IValue *value) { _propert
 bool ObjectValue::isNull() { return _isNull; }
 
 std::string ObjectValue::toString() {
-    return IValue::toString();
+    if (isNull()) return "null";
+    std::string ss("{ ");
+    for (auto pair: _properties) {
+        ss.append(pair.first)
+            .append(" : ")
+            .append(pair.second->toString())
+            .append("; ");
+    }
+    ss.append("}");
+    return ss;
 }

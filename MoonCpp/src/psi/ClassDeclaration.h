@@ -18,6 +18,12 @@ public:
 
     std::vector<FunctionDeclaration *> &getMethods() { return _methods; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Identifier *_id;
 

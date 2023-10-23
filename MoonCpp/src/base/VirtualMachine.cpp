@@ -10,7 +10,6 @@ void VirtualMachine::compile(FunctionDeclaration *funcDecl) {
 }
 
 IValue *VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, std::vector<IValue *> args) {
-    tbl->buildScope();
     for (int i = 0; i < decl->getParams().size(); i++) {
         auto param = decl->getParams()[i];
         tbl->scan(Symbol::build(param->getName(), args[i]));
@@ -18,13 +17,13 @@ IValue *VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, s
     auto evaluator = new Evaluation(tbl, this);
     if (_btc.find(decl) == _btc.end())
         compile(decl);
+    tbl->buildScope();
     auto _r = _btc[decl]->interpret(evaluator);
     tbl->popScope();
     return _r;
 }
 
 IValue *VirtualMachine::evaluate(SymbolProvider *scope, Expression *exp) {
-//    std::cout << "VirtualMachine::evaluate : "  << std::endl;
     auto evaluator = new Evaluation(scope, this);
     return evaluator->evaluate(exp);
 }

@@ -15,6 +15,12 @@ public:
 
     Expression *getInit() { return _init; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Identifier *_id = nullptr;
 

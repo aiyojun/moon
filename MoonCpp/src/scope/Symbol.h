@@ -11,7 +11,7 @@
 class Symbol {
 public:
     enum SymbolType {
-        LITERAL, BUILTIN_FUNCTION, DECL_FUNCTION, DECL_CLASS, DECL_VARIABLE
+        LITERAL, BUILTIN_FUNCTION, DECL_FUNCTION, DECL_CLASS, DECL_VARIABLE, OBJECT
     };
 
     template<class T>

@@ -42,7 +42,7 @@ private:
 
     VirtualMachine *_vm;
 
-    std::vector<IValue *> _valueStack;
+    std::vector<IValue *> _vstack;
 
     std::set<PsiElement *> _checkpoints;
 };

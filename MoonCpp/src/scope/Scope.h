@@ -9,9 +9,9 @@ class Scope {
 public:
     explicit Scope(std::string name = "");
 
-    bool contains(const std::string &id) { return _symbols.find(id) == _symbols.end(); }
+    bool contains(const std::string &id) { return _symbols.find(id) != _symbols.end(); }
 
-    Symbol *get(const std::string &id) { return _symbols[id]; }
+    Symbol *get(const std::string &id) { return contains(id) ? _symbols.at(id) : nullptr; }
 
     void add(Symbol *symbol);
 
@@ -25,6 +25,8 @@ private:
     std::string _name;
 
     std::map<std::string, Symbol *> _symbols;
+
+    friend class SymbolProvider;
 };
 
 

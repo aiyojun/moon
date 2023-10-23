@@ -23,6 +23,12 @@ public:
 
     BlockStatement *getBody() { return _body; }
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Expression *_init = nullptr;
 

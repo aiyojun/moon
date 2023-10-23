@@ -34,11 +34,9 @@ void MoonScriptEngine::compile(const std::string &path) {
     _program = _builder->getProgram();
     for (auto decl: _program->getBody()) {
         // todo:
-        Debug() << "decl : " << decl << Debugger::_end;
         if (instanceof<FunctionDeclaration *>(decl)) {
             auto func = dynamic_cast<FunctionDeclaration *>(decl);
             _org->scanFunction(func);
-//            _globalScope->add(Symbol::build(func->getId()->getName(), func));
             _vm->compile(func);
             continue;
         }
@@ -47,15 +45,12 @@ void MoonScriptEngine::compile(const std::string &path) {
         }
     }
     _org->setGlobalSymbol("println", new BuiltinPrintln);
-    std::cout << "Organizer : \n---" << _org->getGlobalSymbolNumber() << "\n" << _org->toString() << "\n---" << std::endl;
-//    Debug() << "Organizer : " << _org->toString() << Debugger::_end;
-//    Debug() << "Global symbol table : \n" << _org->createFunctionScope()->toString() << Debugger::_end;
-//    _globalScope->add(Symbol::build("println", new BuiltinPrintln));
 }
 
 IValue *MoonScriptEngine::run() {
+//    std::cout << "[LANG] run" << std::endl;
     auto _main = new CallExpression;
     _main->setCallee(Identifier::build("main"));
+    _main->mount();
     return _vm->evaluate(_org->createFunctionScope(), _main);
-//    return _vm->evaluate(createFunctionScope(), _main);
 }

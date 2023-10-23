@@ -15,6 +15,12 @@ public:
 
     std::string toString() override;
 
+    PsiElement *mount() override;
+
+    json toJson() override;
+
+    nlohmann::json toJsonTree() override;
+
 private:
     Expression *_left = nullptr;
 

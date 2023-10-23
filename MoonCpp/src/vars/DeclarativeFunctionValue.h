@@ -5,7 +5,7 @@
 
 class DeclarativeFunctionValue : public CallableValue {
 public:
-    DeclarativeFunctionValue(FunctionDeclaration *decl);
+    explicit DeclarativeFunctionValue(FunctionDeclaration *decl);
 
     IValue * invoke(std::vector<IValue *> args) override;
 
