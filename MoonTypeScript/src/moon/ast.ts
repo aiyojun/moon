@@ -14,7 +14,7 @@ import MoonParser, {
     BlockStatementContext,
     BreakStatementContext,
     ClassDeclarationContext,
-    ContinueStatementContext,
+    ContinueStatementContext, DeclarationsContext,
     ElseStatementContext,
     ExpressionContext,
     ForStatementContext,
@@ -23,7 +23,7 @@ import MoonParser, {
     MemberContext,
     MembersContext,
     MultiIfStatementContext,
-    ParamsContext,
+    ParamsContext, ProgramContext,
     ReturnStatementContext,
     StatementsContext,
     VariableDeclarationContext,
@@ -82,46 +82,16 @@ export class PsiBuilder {
         const parser = new MoonParser(tokens);
         parser.removeErrorListeners()
         parser.addErrorListener(new MoonLexerErrorListener())
-        try {
-            const tree = parser.program();
-            this._program = this.handleProgram(tree)
-        } catch (e) {
-            console.error(e)
-        }
+        this._program = this.handleProgram(parser.program())
+        this._program.mount()
+        console.info(this._program)
         return this
     }
 
-    handleProgram(program: ParseTree) {
-        const prog = new Program().loc(this.location(program))
-        this.handleParseTree(program,
-                tree => {
-                    if (tree instanceof ClassDeclarationContext) {
-                        const identifiers = this.findTerminals(tree.children, MoonLexer.ID)
-                        const classDeclaration = new ClassDeclaration()
-                        classDeclaration.id = this.handleIdentifier(identifiers[0])
-                        this.unfoldMembers(this.findFirstParserRule(tree.children, MoonParser.RULE_members))
-                            .forEach(member =>
-                                member instanceof VariableDeclaration
-                                    ? classDeclaration.variables.push(member)
-                                    : classDeclaration.methods.push(member as FunctionDeclaration)
-                            )
-                        prog.body.push(classDeclaration)
-                        return true
-                    }
-                    if (tree instanceof VariableDeclarationContext) {
-                        prog.body.push(this.handleVariableDeclaration(tree))
-                        return true
-                    }
-                    if (tree instanceof FunctionDeclarationContext) {
-                        prog.body.push(this.handleFunctionDeclaration(tree))
-                        return true
-                    }
-                    return false
-                },
-                tree => {}
-            )
-        prog.body.forEach(d => d.relate(prog))
-        return prog
+    handleProgram(tree: ProgramContext): Program {
+        const _r = new Program().setTextRange(tree)
+        _r.body = this.unfoldDeclarations(tree.declarations())
+        return _r
     }
 
     handleMember(tree: MemberContext): Declaration {
@@ -131,18 +101,31 @@ export class PsiBuilder {
             return this.handleFunctionDeclaration(tree.children[0])
     }
 
+    handleClassDeclaration(tree: ClassDeclarationContext): ClassDeclaration {
+        const _r = new ClassDeclaration().setTextRange(tree)
+        _r.id = this.handleIdentifier(tree.ID(0))
+        this.unfoldMembers(tree.members()).forEach(decl => {
+            if (decl instanceof VariableDeclaration) {
+                _r.variables.push(decl)
+            } else if (decl instanceof FunctionDeclaration) {
+                _r.methods.push(decl)
+            }
+        })
+        return _r;
+    }
+
     handleVariableDeclaration(tree: VariableDeclarationContext): VariableDeclaration {
-        const v = new VariableDeclaration().loc(this.location(tree))
+        const v = new VariableDeclaration().setTextRange(tree)
         v.id = this.handleIdentifier(tree.children[0] as TerminalNode)
         v.init = this.handleExpression(tree.children[2] as ExpressionContext)
         return v
     }
 
     handleFunctionDeclaration(tree: FunctionDeclarationContext): FunctionDeclaration {
-        const params = this.findFirstParserRule(tree.children, MoonParser.RULE_params)
-        const f = new FunctionDeclaration().loc(this.location(tree))
+        const params = tree.params()
+        const f = new FunctionDeclaration().setTextRange(tree)
         f.id = this.handleIdentifier(tree.children[1] as TerminalNode)
-        f.params = (params !== null ? this.unfoldParams(params) : []).map(p => p.relate(f))
+        f.params = (params !== null ? this.unfoldParams(params) : [])
         f.body = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
         return f
     }
@@ -165,14 +148,14 @@ export class PsiBuilder {
         if (elseStatement && Array.isArray(elseStatement.children) && elseStatement.children.length > 0)
             conditions[conditions.length - 1].alternate =
                 this.handleBlockStatement(elseStatement.children[1] as BlockStatementContext)
-        return conditions[0].loc(this.location(tree))
+        return conditions[0]
     }
 
     handleForStatement(tree: ForStatementContext): LoopStatement {
         const semi = this.indexOfTerminals(tree.children, MoonLexer.SEMI)
         const isNumeric = semi.length > 0
         if (isNumeric) {
-            const l = new ForStatement().loc(this.location(tree))
+            const l = new ForStatement().setTextRange(tree)
             l.init = tree.children[semi[0] - 1] instanceof ExpressionContext
                 ? this.handleExpression(tree.children[semi[0] - 1] as ExpressionContext) : null
             l.test = tree.children[semi[1] - 1] instanceof ExpressionContext
@@ -182,7 +165,7 @@ export class PsiBuilder {
             l.body = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
             return l
         } else {
-            const l = new ForeachStatement().loc(this.location(tree))
+            const l = new ForeachStatement().setTextRange(tree)
             l.left  = this.handleExpression(tree.children[2] as ExpressionContext)
             l.right = this.handleExpression(tree.children[4] as ExpressionContext)
             l.body  = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
@@ -191,30 +174,29 @@ export class PsiBuilder {
     }
 
     handleWhileStatement(tree: WhileStatementContext): WhileStatement {
-        const w = new WhileStatement().loc(this.location(tree))
+        const w = new WhileStatement().setTextRange(tree)
         w.test = this.handleExpression(tree.children[2] as ExpressionContext)
         w.body = this.handleBlockStatement(tree.children[4] as BlockStatementContext)
         return w
     }
 
     handleReturnStatement(tree: ReturnStatementContext): ReturnStatement {
-        const r = new ReturnStatement().loc(this.location(tree))
+        const r = new ReturnStatement().setTextRange(tree)
         r.argument = tree.children.length === 2 ? this.handleExpression(tree.children[1] as ExpressionContext) : null
         return r
     }
 
     handleContinueStatement(tree: ContinueStatementContext): ContinueStatement {
-        return new ContinueStatement().loc(this.location(tree))
+        return new ContinueStatement().setTextRange(tree)
     }
 
     handleBreakStatement(tree: BreakStatementContext): BreakStatement {
-        return new BreakStatement().loc(this.location(tree))
+        return new BreakStatement().setTextRange(tree)
     }
 
     handleBlockStatement(tree: BlockStatementContext): BlockStatement {
-        const b = new BlockStatement().loc(this.location(tree))
+        const b = new BlockStatement().setTextRange(tree)
         b.body = tree.children.length === 3 ? this.handleStatements(tree.children[1] as StatementsContext) : []
-        b.body.forEach(s => s.relate(b))
         return b
     }
 
@@ -225,15 +207,15 @@ export class PsiBuilder {
             if (last.ruleIndex && last.ruleIndex === MoonParser.RULE_accessExpression) {
                 obj = this.handleAccessExpression(obj, last)
             }
-            return obj.loc(this.location(tree))
+            return obj
         }
         if (tree.children[0] instanceof TerminalNode && tree.children[0].getText() === 'new') {
-            let obj = this.handleNewExpression(tree.children[1] as TerminalNode, [])
+            let obj = this.handleNewExpression(tree)//(tree.children[1] as TerminalNode, [])
             const last = tree.children[tree.children.length - 1] as any
             if (last.ruleIndex && last.ruleIndex === MoonParser.RULE_accessExpression) {
                 obj = this.handleAccessExpression(obj, last)
             }
-            return obj.loc(this.location(tree))
+            return obj
         }
         if (tree.children[0] instanceof TerminalNode && tree.children[0].symbol.type === MoonLexer.ID) {
             let obj = this.handleIdentifier(tree.children[0])
@@ -241,18 +223,18 @@ export class PsiBuilder {
             if (last.ruleIndex && last.ruleIndex === MoonParser.RULE_accessExpression) {
                 obj = this.handleAccessExpression(obj, last)
             }
-            return obj.loc(this.location(tree))
+            return obj
         }
         if (tree.children.length === 1) { return this.handleTerminal(tree.children[0] as TerminalNode) }
         if (tree.children.length === 2
             && tree.children[0] instanceof TerminalNode
             && tree.children[1] instanceof ExpressionContext) {
-            return this.handleUnaryExpression(tree.children[0], tree.children[1]).loc(this.location(tree))
+            return this.handleUnaryExpression(tree)
         }
         if (tree.children.length === 2
             && tree.children[0] instanceof ExpressionContext
             && tree.children[1] instanceof TerminalNode) {
-            return this.handleUnaryExpression(tree.children[1], tree.children[0], false).loc(this.location(tree))
+            return this.handleUnaryExpression(tree)
         }
         if (tree.children.length === 3
             && tree.children[0] instanceof ExpressionContext
@@ -260,8 +242,8 @@ export class PsiBuilder {
             && tree.children[2] instanceof ExpressionContext
         ) {
             return tree.children[1].getText() === '='
-                ? this.handleAssignmentExpression(tree.children[0], tree.children[2]).loc(this.location(tree))
-                : this.handleBinaryExpression(tree.children[1], tree.children[0], tree.children[2]).loc(this.location(tree))
+                ? this.handleAssignmentExpression(tree)
+                : this.handleBinaryExpression(tree)
         }
         return null
     }
@@ -278,7 +260,6 @@ export class PsiBuilder {
             index = 0;
         }
         while (index < seq.length) {
-            seq[index].relate(iObj)
             if (seq[index] instanceof CallExpression) {
                 (seq[index] as CallExpression).callee = iObj
             } else {
@@ -290,90 +271,92 @@ export class PsiBuilder {
         return iObj
     }
 
-    handleMemberExpression(obj, id: TerminalNode) {
-        const call = new MemberExpression()
-        call.object_ = obj
-        call.property = this.handleIdentifier(id)
+    handleMemberExpression(tree: AccessExpressionContext) {
+        const call = new MemberExpression().setTextRange(tree)
+        call.object_ = null
+        call.property = this.handleIdentifier(tree.ID())
         return call
     }
 
-    handleDynamicMemberExpression(obj, expr: ExpressionContext) {
-        const call = new DynamicMemberExpression()
-        call.object_ = obj
-        call.property = this.handleExpression(expr)
+    handleDynamicMemberExpression(tree: AccessExpressionContext) {
+        const call = new DynamicMemberExpression().setTextRange(tree)
+        call.object_ = null
+        call.property = this.handleExpression(tree.expression())
         return call
     }
 
-    handleCallExpression(obj, args: ArgumentsContext) {
-        const call = new CallExpression()
-        call.callee = obj
-        call.arguments = this.unfoldArguments(args).map(a => a.relate(call))
+    handleCallExpression(tree: AccessExpressionContext) {
+        const call = new CallExpression().setTextRange(tree)
+        call.callee = null
+        call.arguments = this.unfoldArguments(tree.arguments())
         return call
     }
 
-    handleNewExpression(callee: TerminalNode, _arguments: Array<ExpressionContext>) {
+    handleNewExpression(tree: ExpressionContext) {
         const newObj = new NewExpression()
-        newObj.callee = this.handleIdentifier(callee)
+        newObj.callee = this.handleIdentifier(tree.ID())
         return newObj
     }
 
-    handleAssignmentExpression(left: ExpressionContext, right: ExpressionContext) {
-        const assignment = new AssignmentExpression()
-        assignment.left = this.handleExpression(left)
-        assignment.right = this.handleExpression(right)
+    handleAssignmentExpression(tree: ExpressionContext) {
+        const assignment = new AssignmentExpression().setTextRange(tree)
+        assignment.operator = tree.children[1].getText()
+        assignment.left  = this.handleExpression(tree.children[0] as ExpressionContext)
+        assignment.right = this.handleExpression(tree.children[2] as ExpressionContext)
         return assignment
     }
 
-    handleBinaryExpression(operator: TerminalNode, left: ExpressionContext, right: ExpressionContext) {
-        const binary = new BinaryExpression()
-        binary.operator = operator.getText()
-        binary.left = this.handleExpression(left)
-        binary.right = this.handleExpression(right)
+    handleBinaryExpression(tree: ExpressionContext) {
+        const binary = new BinaryExpression().setTextRange(tree)
+        binary.operator = tree.children[1].getText()
+        binary.left  = this.handleExpression(tree.children[0] as ExpressionContext)
+        binary.right = this.handleExpression(tree.children[2] as ExpressionContext)
         return binary
     }
 
-    handleUnaryExpression(operator: TerminalNode, argument: ExpressionContext, prefix: boolean = true) {
-        const unary = new UnaryExpression()
-        unary.operator = operator.getText()
+    handleUnaryExpression(tree: ExpressionContext) {
+        let operator: string;
+        let argument: ExpressionContext;
+        let prefix: boolean = true
+        if (tree.children[0] instanceof TerminalNode) {
+            operator = tree.children[0].getText()
+            argument = tree.children[1] as ExpressionContext
+        } else {
+            argument = tree.children[0] as ExpressionContext
+            operator = tree.children[1].getText()
+            prefix = false
+        }
+        const unary = new UnaryExpression().setTextRange(tree)
+        unary.operator = operator
         unary.argument = this.handleExpression(argument)
         unary.prefix = prefix
         return unary
     }
 
     handleIdentifier(tree: TerminalNode) {
-        return Identifier.build(tree.getText()).loc(this.location(tree))
+        return Identifier.build(tree.getText()).setTextRange(tree)
     }
 
-    handleTerminal(tree: TerminalNode) {
+    handleTerminal(tree: TerminalNode): Identifier | Literal {
+        let _r = null;
         if (tree.symbol.type === MoonLexer.ID)
-            return Identifier.build(tree.getText()).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexer.NUMBER)
-            return Literal.build(parseFloat(tree.getText())).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexer.HEX)
-            return Literal.build(parseInt(tree.getText(), 16)).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexer.OCT)
-            return Literal.build(parseInt(tree.getText(), 8)).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexer.BIN)
-            return Literal.build(parseInt(tree.getText(), 2)).loc(this.location(tree))
-        if (tree.symbol.type === MoonLexer.STRING)
-            return Literal.build(extractString(tree.getText())).loc(this.location(tree))
-        if (tree.getText() === 'true')
-            return Literal.build(true).loc(this.location(tree))
-        if (tree.getText() === 'false')
-            return Literal.build(false).loc(this.location(tree))
-        return null
-    }
-
-    handleParseTree(tree: ParseTree, onBefore, onAfter) {
-        if (!tree) return
-        if (onBefore(tree)) return
-        if (tree instanceof ParserRuleContext) {
-            for (let i = 0; i < tree.children.length; i++) {
-                const child = tree.children[i]
-                this.handleParseTree(child, onBefore, onAfter)
-            }
-        }
-        onAfter(tree)
+            _r = Identifier.build(tree.getText())
+        else if (tree.symbol.type === MoonLexer.NUMBER)
+            _r = Literal.build(parseFloat(tree.getText()))
+        else if (tree.symbol.type === MoonLexer.HEX)
+            _r = Literal.build(parseInt(tree.getText(), 16))
+        else if (tree.symbol.type === MoonLexer.OCT)
+            _r = Literal.build(parseInt(tree.getText(), 8))
+        else if (tree.symbol.type === MoonLexer.BIN)
+            _r = Literal.build(parseInt(tree.getText(), 2))
+        else if (tree.symbol.type === MoonLexer.STRING)
+            _r = Literal.build(extractString(tree.getText()))
+        else if (tree.getText() === 'true')
+            _r = Literal.build(true)
+        else if (tree.getText() === 'false')
+            _r = Literal.build(false)
+        _r?.setTextRange(tree)
+        return _r
     }
 
     private indexOfTerminals(children: Array<ParseTree>, term: number): number[] {
@@ -386,32 +369,19 @@ export class PsiBuilder {
         return r
     }
 
-    private findTerminals(children: Array<ParseTree>, term: number): TerminalNode[] {
-        const r: Array<TerminalNode> = []
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i]
-            if (child instanceof TerminalNode && child.symbol.type === term)
-                r.push(child)
+    private unfoldDeclarations(tree: DeclarationsContext): Declaration[] {
+        if (tree.declarations_list().length) {
+            let _r: Declaration[] = []
+            for (const decls of tree.declarations_list()) {
+                _r = [..._r, ...this.unfoldDeclarations(decls)]
+            }
+            return _r;
         }
-        return r
-    }
-
-    private findFirstParserRule(children: Array<ParseTree>, rule: number) {
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i] as any
-            if (child.ruleIndex && child.ruleIndex === rule)
-                return child
-        }
-        return null
-    }
-
-    private findLastParserRule(children: Array<ParseTree>, rule: number) {
-        for (let i = children.length - 1; i > -1; i--) {
-            const child = children[i] as any
-            if (child.ruleIndex && child.ruleIndex === rule)
-                return child
-        }
-        return null
+        if (tree.classDeclaration())
+            return [this.handleClassDeclaration(tree.classDeclaration())]
+        if (tree.functionDeclaration())
+            return [this.handleFunctionDeclaration(tree.functionDeclaration())]
+        return [this.handleVariableDeclaration(tree.variableDeclaration())];
     }
 
     private unfoldMembers(tree: MembersContext): Array<Declaration> {
@@ -437,12 +407,13 @@ export class PsiBuilder {
         const first = tree.children[0]
         if (first instanceof TerminalNode) {
             if (first.getText() === '.') {
-                return [this.handleMemberExpression(null, tree.children[1] as TerminalNode)]
-            } else if (first.getText() === '[') {
-                return [this.handleDynamicMemberExpression(null, tree.children[1] as ExpressionContext)]
-            } else if (first.getText() === '(') {
-                return [this.handleCallExpression(null,
-                    tree.children.length === 3 ? (tree.children[1] as ArgumentsContext) : null)]
+                return [this.handleMemberExpression(tree)]
+            }
+            if (first.getText() === '[') {
+                return [this.handleDynamicMemberExpression(tree)]
+            }
+            if (first.getText() === '(') {
+                return [this.handleCallExpression(tree)]
             }
             return []
         }
@@ -466,19 +437,19 @@ export class PsiBuilder {
         if (!(first instanceof StatementsContext)) {
             if (first instanceof IfStatementContext)
                 return [this.handleIfStatement(first)]
-            else if (first instanceof ForStatementContext)
+            if (first instanceof ForStatementContext)
                 return [this.handleForStatement(first)]
-            else if (first instanceof WhileStatementContext)
+            if (first instanceof WhileStatementContext)
                 return [this.handleWhileStatement(first)]
-            else if (first instanceof ReturnStatementContext)
+            if (first instanceof ReturnStatementContext)
                 return [this.handleReturnStatement(first)]
-            else if (first instanceof ContinueStatementContext)
+            if (first instanceof ContinueStatementContext)
                 return [this.handleContinueStatement(first)]
-            else if (first instanceof BreakStatementContext)
+            if (first instanceof BreakStatementContext)
                 return [this.handleBreakStatement(first)]
-            else if (first instanceof BlockStatementContext)
+            if (first instanceof BlockStatementContext)
                 return [this.handleBlockStatement(first)]
-            else if (first instanceof ExpressionContext)
+            if (first instanceof ExpressionContext)
                 return [this.handleExpression(first)]
             return []
         }
@@ -488,7 +459,7 @@ export class PsiBuilder {
     private unfoldMultiIfStatement(tree: MultiIfStatementContext): Array<IfStatement> {
         const first = tree.children[0]
         if (!(first instanceof MultiIfStatementContext)) {
-            const r = new IfStatement().loc(this.location(tree))
+            const r = new IfStatement().setTextRange(tree)
             r.test = this.handleExpression(tree.children[2] as ExpressionContext)
             r.consequent = this.handleBlockStatement(tree.children[4] as BlockStatementContext)
             r.alternate = null
@@ -498,12 +469,6 @@ export class PsiBuilder {
             ...this.unfoldMultiIfStatement(first),
             ...this.unfoldMultiIfStatement(tree.children[2] as MultiIfStatementContext)
         ]
-    }
-
-    private location(tree: ParseTree) {
-        if (tree instanceof TerminalNode) return {line: tree.symbol.line, start: tree.symbol.start, end: tree.symbol.stop}
-        else if (tree instanceof ParserRuleContext) return {line: tree.start.line, start: tree.start.start, end: tree.stop.stop}
-        else return {}
     }
 }
 
