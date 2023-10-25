@@ -55,7 +55,8 @@ export class MoonScriptEngine {
         // console.debug(`[LANG] run`)
         const _main = new CallExpression()
         _main.callee = Identifier.build("main")
-        _main.arguments = [Literal.build(0), Literal.build(null)]
+        // _main.arguments = [Literal.build(0), Literal.build(null)]
+        _main.mount()
         return this._vm.evaluate(this._org.createFunctionScope(), _main)
     }
 

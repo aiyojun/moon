@@ -2,35 +2,45 @@
 #define MOONCPP_REALNUMBER_H
 
 #include <string>
+#include <vector>
+#include <ostream>
 
 // + - * / % >> << | & ^ ~
 class RealNumber {
 public:
-    RealNumber(int n);
+    RealNumber() = default;
 
-    RealNumber(long n);
+//    RealNumber(int n);
+//
+//    RealNumber(long n);
+//
+//    RealNumber(float n);
+//
+//    RealNumber(double n);
 
-    RealNumber(float n);
-
-    RealNumber(double n);
+    RealNumber(const std::vector<unsigned char> &n);
 
     RealNumber(const std::string &n);
 
     RealNumber(const RealNumber &r);
 
-    ~RealNumber();
+//    ~RealNumber();
 
-    RealNumber operator=(RealNumber &r);
+    void clear();
+
+    RealNumber& operator=(const RealNumber &r);
 
     RealNumber operator+(RealNumber &r);
 
     RealNumber operator-(RealNumber &r);
 
-    RealNumber mul(RealNumber &r);
+    RealNumber operator*(RealNumber &r);
 
     RealNumber div(RealNumber &r);
 
-    RealNumber compare(RealNumber &r);
+    RealNumber mod(RealNumber &r);
+
+    int compare(RealNumber &r);
 
     RealNumber pow(int n);
 
@@ -39,7 +49,9 @@ public:
     friend std::ostream &operator<<(std::ostream &out, const RealNumber &r);
 
 private:
+    std::vector<unsigned char> _dec;
 
+//    std::vector<unsigned char> _bin;
 };
 
 std::string to_string(const RealNumber &r);

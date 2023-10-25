@@ -45,13 +45,6 @@ export class PsiElement {
         return this
     }
 
-    // loc(obj: Record<string, any>) {
-    //     this._textRange.line = obj.line
-    //     this._textRange.start = obj.start
-    //     this._textRange.end = obj.end
-    //     return this
-    // }
-
     dumps(): Record<string, any> { return {start: this._textRange.start, end: this._textRange.end} }
 
     toString(): string { return "" }
@@ -340,7 +333,7 @@ export class MemberExpression extends Expression {
     }
     mount() {
         this._object_?.relate(this); this._object_?.mount()
-        this._property?.relate(this); this._property?.mount()
+        // this._property?.relate(this); this._property?.mount()
     }
 }
 

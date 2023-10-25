@@ -30,16 +30,15 @@ export class Evaluator {
     }
 
     evaluate(exp: Expression): IValue {
-        // console.debug(`scope: \n${this.scope.toString()}`)
         // console.debug(exp)
         const valueStack: IValue[] = []
-        const checkpoints: Set<PsiElement> = new Set
+        // const checkpoints: Set<PsiElement> = new Set
         PsiElement.walk(exp, (el: Expression) => {
-            if (checkpoints.has(el)) {
-                // console.warn(`[LANG] checkpoint exception`)
-                return true
-            }
-            checkpoints.add(el)
+            // if (checkpoints.has(el)) {
+            //     console.warn(`[LANG] checkpoint exception`)
+            //     return true
+            // }
+            // checkpoints.add(el)
             if (el instanceof AssignmentExpression && el.left instanceof Identifier) {
                 if (!this.scope.contains(el.left.name))
                     this.scope.scan(new ISymbol(el.left.name, ValueSystem.buildNull()))
@@ -54,6 +53,7 @@ export class Evaluator {
             }
             return false
         }, (el: Expression) => {
+            // console.info(valueStack)
             if (el instanceof DynamicMemberExpression) {
                 const [obj, arg] = valueStack.splice(valueStack.length - 2, 2)
                 valueStack.push(this.handleDynamicMember(el as DynamicMemberExpression, obj, arg))
@@ -83,14 +83,13 @@ export class Evaluator {
             }
             if (el instanceof CallExpression) {
                 const nArgs = el.arguments.length
-                const [callee] = valueStack.splice(valueStack.length - 1, 1)
-                const args = valueStack.splice(valueStack.length - nArgs, nArgs)
+                const [callee, ...args] = valueStack.splice(valueStack.length - (nArgs + 1), nArgs + 1)
                 valueStack.push(this.handleCall(el, callee, ...args))
                 return
             }
         })
         // console.debug(`[LANG] EVAL ${exp.toString()} => ${valueStack[valueStack.length - 1]}`)
-        return valueStack.pop()
+        return valueStack[valueStack.length - 1] // valueStack.pop()
     }
 
     private handleLiteral(exp: Literal): IValue {
@@ -104,7 +103,7 @@ export class Evaluator {
 
     private handleIdentifier(exp: Identifier): IValue {
         if (!this.scope.contains(exp.name))
-            throw new Error(`error: no such identifier : ${exp.name}`)
+            throw new Error(`error:${exp.textRange().line}: no such identifier : ${exp.name}`)
         return this.scope.get(exp.name).value
     }
 
@@ -125,6 +124,7 @@ export class Evaluator {
     }
 
     private handleCall(exp: CallExpression, callee: IValue, ...args: IValue[]): IValue {
+        // console.info(callee)
         if (!(callee instanceof CallableValue))
             throw new Error(`error: ${callee.toString()} not callable`)
         // console.debug(`[LANG] args : ${args.map(arg => arg.toString()).join(", ")} `)

@@ -95,10 +95,10 @@ void Evaluation::onAfter(PsiElement *el) {
 }
 
 std::shared_ptr<IValue> Evaluation::handleLiteral(Literal *exp) {
-    if (exp->isInteger()) return ValueSystem::buildNumber(exp->getInteger());
-    if (exp->isFloat()) return ValueSystem::buildNumber(exp->getFloat());
-    if (exp->isBoolean()) return ValueSystem::buildBoolean(exp->getBoolean());
-    if (exp->isString()) return ValueSystem::buildString(exp->getString());
+    if (exp->isInteger())   return ValueSystem::buildNumber(exp->getInteger());
+    if (exp->isFloat())     return ValueSystem::buildNumber(exp->getFloat());
+    if (exp->isBoolean())   return ValueSystem::buildBoolean(exp->getBoolean());
+    if (exp->isString())    return ValueSystem::buildString(exp->getString());
     return ValueSystem::buildNull();
 }
 
