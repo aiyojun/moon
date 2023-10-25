@@ -51,8 +51,8 @@ void runMoon(const std::string& path) {
         engine->compile(path);
         engine->run();
     } catch (SyntaxError& e) {
-        std::cerr << "[LANG] error " << e.what() << std::endl;
+        std::cerr << "[LANG] " << e.what() << std::endl;
     } catch (std::exception& e) {
-        std::cerr << "[LANG] error " << e.what() << std::endl;
+        std::cerr << "[LANG] " << e.what() << std::endl;
     }
 }

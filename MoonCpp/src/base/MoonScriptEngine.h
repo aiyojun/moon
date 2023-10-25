@@ -18,7 +18,7 @@ public:
 
     void compile(const std::string &path);
 
-    IValue *run();
+    std::shared_ptr<IValue> run();
 
 //    SymbolProvider *createFunctionScope() { return new SymbolProvider({_globalScope}); }
 

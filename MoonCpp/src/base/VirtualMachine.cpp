@@ -9,7 +9,7 @@ void VirtualMachine::compile(FunctionDeclaration *funcDecl) {
     _btc[funcDecl]->compile(funcDecl);
 }
 
-IValue *VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, std::vector<IValue *> args) {
+std::shared_ptr<IValue> VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, std::vector<std::shared_ptr<IValue> > args) {
     for (int i = 0; i < decl->getParams().size(); i++) {
         auto param = decl->getParams()[i];
         tbl->scan(Symbol::build(param->getName(), args[i]));
@@ -23,7 +23,7 @@ IValue *VirtualMachine::invoke(SymbolProvider *tbl, FunctionDeclaration *decl, s
     return _r;
 }
 
-IValue *VirtualMachine::evaluate(SymbolProvider *scope, Expression *exp) {
+std::shared_ptr<IValue> VirtualMachine::evaluate(SymbolProvider *scope, Expression *exp) {
     auto evaluator = new Evaluation(scope, this);
     return evaluator->evaluate(exp);
 }

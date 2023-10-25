@@ -3,7 +3,7 @@
 #include "values.h"
 #include "BuiltinProvider.h"
 
-Symbol *Symbol::build(const std::string& id, IValue *value) {
+Symbol *Symbol::build(const std::string& id, const std::shared_ptr<IValue> &value) {
     if (instanceof<BaseValue *>(value)) { return new Symbol(id, value, LITERAL); }
     if (instanceof<StringValue *>(value)) { return new Symbol(id, value, LITERAL); }
     if (instanceof<BuiltinFunctionValue *>(value)) { return new Symbol(id, value, BUILTIN_FUNCTION); }
@@ -41,7 +41,7 @@ std::string Symbol::toString() {
     return std::move(ss);
 }
 
-void Symbol::setValue(IValue *value) {
+void Symbol::setValue(const std::shared_ptr<IValue> &value) {
     if (instanceof<BaseValue *>(value)) { _type = LITERAL; _value = value; return; }
     if (instanceof<StringValue *>(value)) { _type = LITERAL; _value = value; return; }
     if (instanceof<BuiltinFunctionValue *>(value)) { _type = BUILTIN_FUNCTION; _value = value; return; }

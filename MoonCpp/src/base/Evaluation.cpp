@@ -4,10 +4,10 @@
 #include "SyntaxError.h"
 #include "debug/Debugger.h"
 
-std::vector<IValue *> splice(std::vector<IValue *>& vec, int length) {
+std::vector<std::shared_ptr<IValue> > splice(std::vector<std::shared_ptr<IValue> >& vec, int length) {
     if (vec.empty())
         throw SyntaxError("splice empty vector");
-    std::vector<IValue *> _r;
+    std::vector<std::shared_ptr<IValue> > _r;
     int size = (int) vec.size();
     for (int i = 0; i < length; i++) {
         _r.emplace_back(vec[size - 1 - i]);
@@ -21,7 +21,7 @@ Evaluation::Evaluation(SymbolProvider *scope, VirtualMachine *vm)
     : _scope(scope), _vm(vm) {
 }
 
-IValue *Evaluation::evaluate(Expression *exp) {
+std::shared_ptr<IValue> Evaluation::evaluate(Expression *exp) {
 //    std::cout << "evaluate " << exp->toString() << std::endl;
 //    if (!_scope) {
 //        std::cout << "warning: without scope" << std::endl;
@@ -94,7 +94,7 @@ void Evaluation::onAfter(PsiElement *el) {
     }
 }
 
-IValue *Evaluation::handleLiteral(Literal *exp) {
+std::shared_ptr<IValue> Evaluation::handleLiteral(Literal *exp) {
     if (exp->isInteger()) return ValueSystem::buildNumber(exp->getInteger());
     if (exp->isFloat()) return ValueSystem::buildNumber(exp->getFloat());
     if (exp->isBoolean()) return ValueSystem::buildBoolean(exp->getBoolean());
@@ -102,14 +102,18 @@ IValue *Evaluation::handleLiteral(Literal *exp) {
     return ValueSystem::buildNull();
 }
 
-IValue *Evaluation::handleIdentifier(Identifier *exp) {
+std::shared_ptr<IValue> Evaluation::handleIdentifier(Identifier *exp) {
     if (!_scope->contains(exp->getName()))
         throw SyntaxError("error: no such identifier : " + exp->getName());
     return _scope->get(exp->getName())->get();
 }
 
-IValue *Evaluation::handleAssign(AssignmentExpression *exp, IValue *target, IValue *value) {
+std::shared_ptr<IValue> Evaluation::handleAssign(AssignmentExpression *exp, const std::shared_ptr<IValue> &target, const std::shared_ptr<IValue> &value) {
+    if (exp->getOperator().length() > 1)
+        throw SyntaxError("error: no implementation");
     if (instanceof<Identifier *>(exp->getLeft())) {
+//        if (exp->getOperator().length() == 1) {
+//        }
         auto identifier = as<Identifier *>(exp->getLeft());
         auto symbol = _scope->get(identifier->getName());
         symbol->setValue(value);
@@ -122,31 +126,31 @@ IValue *Evaluation::handleAssign(AssignmentExpression *exp, IValue *target, IVal
     return value;
 }
 
-IValue *Evaluation::handleCall(CallExpression *exp, IValue *callee, std::vector<IValue *> args) {
+std::shared_ptr<IValue> Evaluation::handleCall(CallExpression *exp, const std::shared_ptr<IValue> &callee, std::vector<std::shared_ptr<IValue> > args) {
     if (!instanceof<CallableValue *>(callee))
         throw SyntaxError("error: " + callee->toString() + " not callable");
-    auto rr = as<CallableValue *>(callee);
+    auto rr = downcast<CallableValue>(callee);
     rr->setScope(_scope);
     rr->setVM(_vm);
     return rr->invoke(std::move(args));
 }
 
-IValue *Evaluation::handleDynamicMember(DynamicMemberExpression *exp, IValue *obj, IValue *property) {
+std::shared_ptr<IValue> Evaluation::handleDynamicMember(DynamicMemberExpression *exp, const std::shared_ptr<IValue> &obj, const std::shared_ptr<IValue> &property) {
     if (!instanceof<ObjectValue *>(obj))
         throw SyntaxError("error: invalid member access : " + property->toString());
-    auto obj1 = as<ObjectValue *>(obj);
+    auto obj1 = downcast<ObjectValue>(obj);
     if (obj1->isNull())
         throw SyntaxError("error: null exception member access : " + property->toString());
-    if (instanceof<NumberValue *>(property) && as<NumberValue *>(property)->isInteger() && instanceof<ArrayValue *>(obj)) {
-        auto mark = as<NumberValue *>(property)->getInteger();
-        auto arr = as<ArrayValue *>(obj);
+    if (instanceof<NumberValue *>(property) && downcast<NumberValue>(property)->isInteger() && instanceof<ArrayValue *>(obj)) {
+        auto mark = downcast<NumberValue>(property)->getInteger();
+        auto arr = downcast<ArrayValue>(obj);
         auto _r = arr->getItem(mark);
         _r->setRef(jlib::Ref::refArray(arr, mark));
         return _r;
     }
     if (instanceof<StringValue *>(property) && instanceof<ObjectValue *>(obj)) {
-        auto rObj = as<ObjectValue *>(obj);
-        auto key = as<StringValue *>(property)->getValue();
+        auto rObj = downcast<ObjectValue>(obj);
+        auto key = downcast<StringValue>(property)->getValue();
         if (!rObj->contains(key))
             throw SyntaxError("error: no such property : " + key);
         auto _r = rObj->getProperty(key);
@@ -156,13 +160,13 @@ IValue *Evaluation::handleDynamicMember(DynamicMemberExpression *exp, IValue *ob
     throw SyntaxError("error: invalid member access : " + property->toString());
 }
 
-IValue *Evaluation::handleMember(MemberExpression *exp, IValue *obj) {
+std::shared_ptr<IValue> Evaluation::handleMember(MemberExpression *exp, const std::shared_ptr<IValue> &obj) {
     if (!instanceof<Identifier *>(exp->getProperty()))
         throw SyntaxError("error: invalid member access");
     auto property = as<Identifier *>(exp->getProperty());
     if (!instanceof<ObjectValue *>(obj))
         throw SyntaxError("error: invalid member access : " + property->getName());
-    auto rObj = as<ObjectValue *>(obj);
+    auto rObj = downcast<ObjectValue>(obj);
     if (rObj->isNull())
         throw SyntaxError("error: null exception when access : " + property->getName());
     if (!rObj->contains(property->getName()))
@@ -172,109 +176,109 @@ IValue *Evaluation::handleMember(MemberExpression *exp, IValue *obj) {
     return _r;
 }
 
-IValue *Evaluation::handleNew(NewExpression *exp, std::vector<IValue *> args) {
+std::shared_ptr<IValue> Evaluation::handleNew(NewExpression *exp, std::vector<std::shared_ptr<IValue> > args) {
     auto clazz = exp->getCallee();
     auto symbol = _scope->get(clazz->getName());
     if (!symbol)
         throw SyntaxError("error: no such class : " + clazz->getName());
     if (!instanceof<DeclarativeClassValue *>(symbol->get()))
         throw SyntaxError("error: " + clazz->getName() + " not class type");
-    return ValueSystem::buildDeclarativeObject(as<DeclarativeClassValue *>(symbol->get()));
+    return ValueSystem::buildDeclarativeObject(downcast<DeclarativeClassValue>(symbol->get()));
 }
 
-IValue *Evaluation::handleUnary(UnaryExpression *exp, IValue *arg) {
+std::shared_ptr<IValue> Evaluation::handleUnary(UnaryExpression *exp, const std::shared_ptr<IValue> &arg) {
     auto op = exp->getOperator();
     if (op == "!" && instanceof<NumberValue *>(arg))
-        return ValueSystem::buildBoolean(! as<NumberValue *>(arg)->isTrue());
+        return ValueSystem::buildBoolean(! downcast<NumberValue>(arg)->isTrue());
     if (op == "!" && instanceof<BooleanValue *>(arg))
-        return ValueSystem::buildBoolean(! as<BooleanValue *>(arg)->getValue());
+        return ValueSystem::buildBoolean(! downcast<BooleanValue>(arg)->getValue());
     if (op == "!" && instanceof<ObjectValue *>(arg))
-        return ValueSystem::buildBoolean(as<ObjectValue *>(arg)->isNull());
-    if (op == "~" && instanceof<NumberValue *>(arg) && as<NumberValue *>(arg)->isInteger())
-        return ValueSystem::buildNumber(~ as<NumberValue *>(arg)->getInteger());
+        return ValueSystem::buildBoolean(downcast<ObjectValue>(arg)->isNull());
+    if (op == "~" && instanceof<NumberValue *>(arg) && downcast<NumberValue>(arg)->isInteger())
+        return ValueSystem::buildNumber(~ downcast<NumberValue>(arg)->getInteger());
     if (op == "+" && instanceof<NumberValue *>(arg)) return arg;
     if (op == "-" && instanceof<NumberValue *>(arg)) {
-        auto rr = as<NumberValue *>(arg);
+        auto rr = downcast<NumberValue>(arg);
         return rr->isInteger() ? ValueSystem::buildNumber(rr->getInteger()) : ValueSystem::buildNumber(rr->getFloat());
     }
     throw SyntaxError("error: invalid unary operation : " + op + ", argument : " + arg->toString());
 }
 
-bool isInteger(NumberValue *lv, NumberValue *rv) { return lv->isInteger() && rv->isInteger(); }
+bool isInteger(const std::shared_ptr<NumberValue> &lv, const std::shared_ptr<NumberValue> &rv) { return lv->isInteger() && rv->isInteger(); }
 
-IValue *Evaluation::handleBinary(BinaryExpression *exp, IValue *left, IValue *right) {
+std::shared_ptr<IValue> Evaluation::handleBinary(BinaryExpression *exp, const std::shared_ptr<IValue> &left, const std::shared_ptr<IValue> &right) {
     auto op = exp->getOperator();
     if (op == "+" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildNumber(lv->getInteger() + rv->getInteger())
                                  : ValueSystem::buildNumber(lv->getAsDouble() + rv->getAsDouble());
     }
     if (op == "+" && (instanceof<StringValue *>(left) || instanceof<StringValue *>(right)))
         return ValueSystem::buildString(left->toString() + right->toString());
     if (op == "-" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildNumber(lv->getInteger() - rv->getInteger())
                                  : ValueSystem::buildNumber(lv->getAsDouble() - rv->getAsDouble());
     }
     if (op == "*" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildNumber(lv->getInteger() * rv->getInteger())
                                  : ValueSystem::buildNumber(lv->getAsDouble() * rv->getAsDouble());
     }
     if (op == "/" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildNumber(lv->getInteger() / rv->getInteger())
                                  : ValueSystem::buildNumber(lv->getAsDouble() / rv->getAsDouble());
     }
     if (op == "%" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)
-            && as<NumberValue *>(left)->isInteger() && as<NumberValue *>(right)->isInteger()) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+            && downcast<NumberValue>(left)->isInteger() && downcast<NumberValue>(right)->isInteger()) {
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return ValueSystem::buildNumber(lv->getInteger() % rv->getInteger());
     }
     if (op == "^" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)
-        && as<NumberValue *>(left)->isInteger() && as<NumberValue *>(right)->isInteger()) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        && downcast<NumberValue>(left)->isInteger() && downcast<NumberValue>(right)->isInteger()) {
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return ValueSystem::buildNumber(lv->getInteger() ^ rv->getInteger());
     }
     if (op == "|" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)
-        && as<NumberValue *>(left)->isInteger() && as<NumberValue *>(right)->isInteger()) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        && downcast<NumberValue>(left)->isInteger() && downcast<NumberValue>(right)->isInteger()) {
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return ValueSystem::buildNumber(lv->getInteger() | rv->getInteger());
     }
     if (op == "&" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)
-        && as<NumberValue *>(left)->isInteger() && as<NumberValue *>(right)->isInteger()) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        && downcast<NumberValue>(left)->isInteger() && downcast<NumberValue>(right)->isInteger()) {
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return ValueSystem::buildNumber(lv->getInteger() & rv->getInteger());
     }
 
 
     if (op == ">" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildBoolean(lv->getInteger() > rv->getInteger())
                                  : ValueSystem::buildBoolean(lv->getAsDouble() > rv->getAsDouble());
     }
     if (op == ">=" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildBoolean(lv->getInteger() >= rv->getInteger())
                                  : ValueSystem::buildBoolean(lv->getAsDouble() >= rv->getAsDouble());
     }
     if (op == "<" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildBoolean(lv->getInteger() < rv->getInteger())
                                  : ValueSystem::buildBoolean(lv->getAsDouble() < rv->getAsDouble());
     }
     if (op == "<=" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildBoolean(lv->getInteger() <= rv->getInteger())
                                  : ValueSystem::buildBoolean(lv->getAsDouble() <= rv->getAsDouble());
     }
     if (op == "==" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildBoolean(lv->getInteger() == rv->getInteger())
                                  : ValueSystem::buildBoolean(lv->getAsDouble() == rv->getAsDouble());
     }
     if (op == "!=" && instanceof<NumberValue *>(left) && instanceof<NumberValue *>(right)) {
-        auto lv = as<NumberValue *>(left); auto rv = as<NumberValue *>(right);
+        auto lv = downcast<NumberValue>(left); auto rv = downcast<NumberValue>(right);
         return isInteger(lv, rv) ? ValueSystem::buildBoolean(lv->getInteger() != rv->getInteger())
                                  : ValueSystem::buildBoolean(lv->getAsDouble() != rv->getAsDouble());
     }
@@ -293,17 +297,17 @@ IValue *Evaluation::handleBinary(BinaryExpression *exp, IValue *left, IValue *ri
         return ValueSystem::buildBoolean(left->toString() != right->toString());
 
     if (op == ">" && instanceof<BooleanValue *>(left) && instanceof<BooleanValue *>(right))
-        return ValueSystem::buildBoolean(as<BooleanValue *>(left)->getValue() > as<BooleanValue *>(right)->getValue());
+        return ValueSystem::buildBoolean(downcast<BooleanValue>(left)->getValue() > downcast<BooleanValue>(right)->getValue());
     if (op == ">=" && instanceof<BooleanValue *>(left) && instanceof<BooleanValue *>(right))
-        return ValueSystem::buildBoolean(as<BooleanValue *>(left)->getValue() >= as<BooleanValue *>(right)->getValue());
+        return ValueSystem::buildBoolean(downcast<BooleanValue>(left)->getValue() >= downcast<BooleanValue>(right)->getValue());
     if (op == "<" && instanceof<BooleanValue *>(left) && instanceof<BooleanValue *>(right))
-        return ValueSystem::buildBoolean(as<BooleanValue *>(left)->getValue() < as<BooleanValue *>(right)->getValue());
+        return ValueSystem::buildBoolean(downcast<BooleanValue>(left)->getValue() < downcast<BooleanValue>(right)->getValue());
     if (op == "<=" && instanceof<BooleanValue *>(left) && instanceof<BooleanValue *>(right))
-        return ValueSystem::buildBoolean(as<BooleanValue *>(left)->getValue() <= as<BooleanValue *>(right)->getValue());
+        return ValueSystem::buildBoolean(downcast<BooleanValue>(left)->getValue() <= downcast<BooleanValue>(right)->getValue());
     if (op == "==" && instanceof<BooleanValue *>(left) && instanceof<BooleanValue *>(right))
-        return ValueSystem::buildBoolean(as<BooleanValue *>(left)->getValue() == as<BooleanValue *>(right)->getValue());
+        return ValueSystem::buildBoolean(downcast<BooleanValue>(left)->getValue() == downcast<BooleanValue>(right)->getValue());
     if (op == "!=" && instanceof<BooleanValue *>(left) && instanceof<BooleanValue *>(right))
-        return ValueSystem::buildBoolean(as<BooleanValue *>(left)->getValue() != as<BooleanValue *>(right)->getValue());
+        return ValueSystem::buildBoolean(downcast<BooleanValue>(left)->getValue() != downcast<BooleanValue>(right)->getValue());
 
     if (op == "==" && instanceof<ObjectValue *>(left) && instanceof<ObjectValue *>(right))
         return ValueSystem::buildBoolean(left == right);

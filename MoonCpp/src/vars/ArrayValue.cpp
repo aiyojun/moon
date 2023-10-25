@@ -2,8 +2,8 @@
 
 ArrayValue::ArrayValue() : ObjectValue() {}
 
-IValue *ArrayValue::getItem(int i) { return _items[i]; }
+std::shared_ptr<IValue> ArrayValue::getItem(int i) { return _items[i]; }
 
-void ArrayValue::setItem(int i, IValue *value) { _items[i] = value; }
+void ArrayValue::setItem(int i, const std::shared_ptr<IValue> &value) { _items[i] = value; }
 
-void ArrayValue::addItem(IValue *value) { _items.emplace_back(value); }
+void ArrayValue::addItem(const std::shared_ptr<IValue> &value) { _items.emplace_back(value); }

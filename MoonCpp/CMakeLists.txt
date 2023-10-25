@@ -77,6 +77,8 @@ add_executable(moon
         src/psi/BreakStatement.cpp
         src/psi/ContinueStatement.cpp
         src/psi/DynamicMemberExpression.cpp
+        src/ds/RealNumber.cpp
+        src/ds/RealNumber.h
 )
 
 target_link_libraries(moon C:/Users/jun.dai/Documents/GitHub/moon/MoonCpp/lib/x64/antlr4-runtime.lib)

@@ -24,7 +24,7 @@ void BytecodeCompiler::compile(FunctionDeclaration *func) {
     optimize();
 }
 
-IValue *BytecodeCompiler::interpret(Evaluation *evaluator) {
+std::shared_ptr<IValue> BytecodeCompiler::interpret(Evaluation *evaluator) {
     _csip = -1;
     while (true) {
         auto btc = next();

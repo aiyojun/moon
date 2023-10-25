@@ -8,7 +8,7 @@
 
 class CallableValue : public ObjectValue {
 public:
-    virtual IValue *invoke(std::vector<IValue *> args) = 0;
+    virtual std::shared_ptr<IValue> invoke(std::vector<std::shared_ptr<IValue> > args) = 0;
 
     void setScope(SymbolProvider *scope) { _scope = scope; }
 

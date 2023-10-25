@@ -9,16 +9,16 @@ class FunctionDeclaration;
 
 class MethodValue : public CallableValue {
 public:
-    MethodValue(ClassDeclaration *clazz, FunctionDeclaration *decl, ObjectValue *obj);
+    MethodValue(ClassDeclaration *clazz, FunctionDeclaration *decl, const std::shared_ptr<ObjectValue> &obj);
 
-    IValue * invoke(std::vector<IValue *> args) override;
+    std::shared_ptr<IValue> invoke(std::vector<std::shared_ptr<IValue>> args) override;
 
 private:
     ClassDeclaration *_clazz;
 
     FunctionDeclaration *_decl;
 
-    ObjectValue *_obj;
+    std::shared_ptr<ObjectValue> _obj;
 };
 
 

@@ -103,7 +103,7 @@ public:
 
     void compile(FunctionDeclaration *func);
 
-    IValue *interpret(Evaluation *evaluator);
+    std::shared_ptr<IValue> interpret(Evaluation *evaluator);
 
 private:
     Bytecode *next();

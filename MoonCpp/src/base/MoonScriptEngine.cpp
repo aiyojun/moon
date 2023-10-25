@@ -9,10 +9,10 @@
 
 class BuiltinPrintln : public BuiltinFunctionValue {
 public:
-    IValue *invoke(std::vector<IValue *> args) override;
+    std::shared_ptr<IValue> invoke(std::vector<std::shared_ptr<IValue> > args) override;
 };
 
-IValue *BuiltinPrintln::invoke(std::vector<IValue *> args) {
+std::shared_ptr<IValue> BuiltinPrintln::invoke(std::vector<std::shared_ptr<IValue> > args) {
     std::string stream;
     for (auto arg : args) {
         stream.append(arg->toString());
@@ -44,10 +44,10 @@ void MoonScriptEngine::compile(const std::string &path) {
             _org->scanClass(as<ClassDeclaration *>(decl));
         }
     }
-    _org->setGlobalSymbol("println", new BuiltinPrintln);
+    _org->setGlobalSymbol("println", Wrap(BuiltinPrintln, new BuiltinPrintln));
 }
 
-IValue *MoonScriptEngine::run() {
+std::shared_ptr<IValue> MoonScriptEngine::run() {
 //    std::cout << "[LANG] run" << std::endl;
     auto _main = new CallExpression;
     _main->setCallee(Identifier::build("main"));

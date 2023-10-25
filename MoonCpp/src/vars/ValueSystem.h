@@ -2,6 +2,7 @@
 #define MOONCPP_VALUESYSTEM_H
 
 #include <string>
+#include <memory>
 
 class IValue;
 
@@ -27,25 +28,25 @@ class ClassDeclaration;
 
 class ValueSystem {
 public:
-    static ObjectValue *buildNull();
+    static std::shared_ptr<ObjectValue> buildNull();
 
-    static NumberValue *buildNumber(int value);
+    static std::shared_ptr<NumberValue> buildNumber(int value);
 
-    static NumberValue *buildNumber(double value);
+    static std::shared_ptr<NumberValue> buildNumber(double value);
 
-    static BooleanValue *buildBoolean(bool value);
+    static std::shared_ptr<BooleanValue> buildBoolean(bool value);
 
-    static StringValue *buildString(std::string value);
+    static std::shared_ptr<StringValue> buildString(std::string value);
 
-    static DeclarativeFunctionValue *buildDeclarativeFunction(FunctionDeclaration *decl);
+    static std::shared_ptr<DeclarativeFunctionValue> buildDeclarativeFunction(FunctionDeclaration *decl);
 
-    static MethodValue *buildMethod(ClassDeclaration *clazz, FunctionDeclaration *decl, ObjectValue *obj);
+    static std::shared_ptr<MethodValue> buildMethod(ClassDeclaration *clazz, FunctionDeclaration *decl, const std::shared_ptr<ObjectValue> &obj);
 
-    static DeclarativeClassValue *buildDeclarativeClass(ClassDeclaration *decl);
+    static std::shared_ptr<DeclarativeClassValue> buildDeclarativeClass(ClassDeclaration *decl);
 
-    static DeclarativeObjectValue *buildDeclarativeObject(DeclarativeClassValue *clazz);
+    static std::shared_ptr<DeclarativeObjectValue> buildDeclarativeObject(std::shared_ptr<DeclarativeClassValue> clazz);
 
-    static bool isTrue(IValue *value);
+    static bool isTrue(const std::shared_ptr<IValue> &value);
 };
 
 #endif //MOONCPP_VALUESYSTEM_H

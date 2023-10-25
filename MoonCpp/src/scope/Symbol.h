@@ -17,28 +17,28 @@ public:
     template<class T>
     T getAs();
 
-    IValue *get() { return _value; }
+    std::shared_ptr<IValue> get() { return _value; }
 
-    static Symbol *build(const std::string& id, IValue *value);
+    static Symbol *build(const std::string& id, const std::shared_ptr<IValue> &value);
 
     const std::string& getName() { return _id; }
 
     std::string toString();
 
-    void setValue(IValue *value);
+    void setValue(const std::shared_ptr<IValue> &value);
 
     bool callable() { return _type == BUILTIN_FUNCTION || _type == DECL_FUNCTION; }
 
     bool isBuiltinFunction() { return _type == BUILTIN_FUNCTION; }
 
 private:
-    Symbol(std::string id, IValue *value, SymbolType type)
+    Symbol(std::string id, std::shared_ptr<IValue> value, SymbolType type)
             : _id(std::move(id)), _value(value), _type(type) {}
 
 private:
     std::string _id;
 
-    IValue *_value;
+    std::shared_ptr<IValue> _value;
 
     SymbolType _type;
 };

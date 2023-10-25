@@ -30,3 +30,5 @@ cmake-build-release
 MoonCpp/include
 MoonCpp/lib
 MoonCpp/src/parser
+doc/.$arch.drawio.dtmp
+doc/.$arch.drawio.bkp

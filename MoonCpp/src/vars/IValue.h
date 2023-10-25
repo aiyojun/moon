@@ -2,10 +2,9 @@
 #define MOONCPP_IVALUE_H
 
 #include <string>
+#include <memory>
 
-namespace jlib {
-    class Ref;
-}
+namespace jlib { class Ref; }
 
 class IValue {
 public:
@@ -13,16 +12,16 @@ public:
 
     bool hasRef();
 
-    jlib::Ref *getRef();
+    std::shared_ptr<jlib::Ref> getRef();
 
-    void setRef(jlib::Ref *ref);
+    void setRef(const std::shared_ptr<jlib::Ref> &ref);
 
     void clearRef();
 
     virtual std::string toString();
 
 private:
-    jlib::Ref *_ref = nullptr;
+    std::shared_ptr<jlib::Ref> _ref;
 };
 
 

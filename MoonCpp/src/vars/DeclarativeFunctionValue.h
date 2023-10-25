@@ -7,7 +7,7 @@ class DeclarativeFunctionValue : public CallableValue {
 public:
     explicit DeclarativeFunctionValue(FunctionDeclaration *decl);
 
-    IValue * invoke(std::vector<IValue *> args) override;
+    std::shared_ptr<IValue> invoke(std::vector<std::shared_ptr<IValue>> args) override;
 
     std::string toString() override { return "DeclarativeFunctionValue"; }
 

@@ -18,7 +18,7 @@ public:
 
     void scanVariable(VariableDeclaration *decl);
 
-    void setGlobalSymbol(const std::string &name, IValue *value);
+    void setGlobalSymbol(const std::string &name, const std::shared_ptr<IValue> &value);
 
     void removeGlobalSymbol(const std::string &name);
 

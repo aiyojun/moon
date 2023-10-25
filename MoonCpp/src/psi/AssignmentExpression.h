@@ -21,10 +21,16 @@ public:
 
     nlohmann::json toJsonTree() override;
 
+    void setOperator(const std::string& op) { _operator = op; }
+
+    const std::string& getOperator() { return _operator; }
+
 private:
     Expression *_left = nullptr;
 
     Expression *_right = nullptr;
+
+    std::string _operator = "=";
 };
 
 #endif //MOONCPP_ASSIGNMENTEXPRESSION_H

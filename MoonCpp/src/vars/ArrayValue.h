@@ -2,20 +2,21 @@
 #define MOONCPP_ARRAYVALUE_H
 
 #include <vector>
+#include <memory>
 #include "ObjectValue.h"
 
 class ArrayValue : public ObjectValue {
 public:
     ArrayValue();
 
-    IValue *getItem(int i);
+    std::shared_ptr<IValue> getItem(int i);
 
-    void setItem(int i, IValue *value);
+    void setItem(int i, const std::shared_ptr<IValue> &value);
 
-    void addItem(IValue *value);
+    void addItem(const std::shared_ptr<IValue> &value);
 
 private:
-    std::vector<IValue *> _items;
+    std::vector<std::shared_ptr<IValue> > _items;
 };
 
 #endif //MOONCPP_ARRAYVALUE_H

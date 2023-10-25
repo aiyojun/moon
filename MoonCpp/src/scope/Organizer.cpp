@@ -29,7 +29,7 @@ void Organizer::scanVariable(VariableDeclaration *decl) {
     // todo:
 }
 
-void Organizer::setGlobalSymbol(const std::string &name, IValue *value) {
+void Organizer::setGlobalSymbol(const std::string &name, const std::shared_ptr<IValue> &value) {
     _globalScope->add(Symbol::build(name, value));
 }
 

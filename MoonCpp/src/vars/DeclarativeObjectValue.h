@@ -7,14 +7,14 @@ class DeclarativeClassValue;
 
 class DeclarativeObjectValue : public ObjectValue {
 public:
-    explicit DeclarativeObjectValue(DeclarativeClassValue *clazz);
+    explicit DeclarativeObjectValue(const std::shared_ptr<DeclarativeClassValue> &clazz);
 
     std::string toString() override;
 
-    DeclarativeClassValue *getClazz() { return _clazz; }
+    std::shared_ptr<DeclarativeClassValue> getClazz() { return _clazz; }
 
 private:
-    DeclarativeClassValue *_clazz;
+    std::shared_ptr<DeclarativeClassValue> _clazz;
 };
 
 #endif //MOONCPP_DECLARATIVEOBJECTVALUE_H

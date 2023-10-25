@@ -2,6 +2,7 @@
 #define MOONCPP_REF_H
 
 #include <string>
+#include "types.h"
 
 class IValue;
 
@@ -15,14 +16,14 @@ namespace jlib {
     public:
         Ref() = default;
 
-        void setValue(IValue *v);
+        void setValue(std::shared_ptr<IValue> v);
 
-        static Ref *refObject(ObjectValue *obj, const std::string &key);
+        static std::shared_ptr<Ref> refObject(const std::shared_ptr<ObjectValue> &obj, const std::string &key);
 
-        static Ref *refArray(ArrayValue *obj, int index);
+        static std::shared_ptr<Ref> refArray(const std::shared_ptr<ArrayValue> &obj, int index);
 
     private:
-        ObjectValue *_ptr = nullptr;
+        std::shared_ptr<ObjectValue> _ptr;
 
         std::string _key;
 

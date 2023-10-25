@@ -1,28 +1,27 @@
 #include "ValueSystem.h"
-#include "types.h"
 #include "values.h"
 
-ObjectValue *ValueSystem::buildNull() { return new ObjectValue; }
+Wrapper(ObjectValue) ValueSystem::buildNull() {return Wrap(ObjectValue, new ObjectValue);}
 
-NumberValue *ValueSystem::buildNumber(int value) { return new NumberValue(value); }
+Wrapper(NumberValue) ValueSystem::buildNumber(int value) { return Wrap(NumberValue, new NumberValue(value)); }
 
-NumberValue *ValueSystem::buildNumber(double value) { return new NumberValue(value); }
+Wrapper(NumberValue) ValueSystem::buildNumber(double value) { return Wrap(NumberValue, new NumberValue(value)); }
 
-BooleanValue *ValueSystem::buildBoolean(bool value) { return new BooleanValue(value); }
+Wrapper(BooleanValue) ValueSystem::buildBoolean(bool value) { return Wrap(BooleanValue, new BooleanValue(value)); }
 
-StringValue *ValueSystem::buildString(std::string value) { return new StringValue(std::move(value)); }
+Wrapper(StringValue) ValueSystem::buildString(std::string value) { return Wrap(StringValue, new StringValue(std::move(value))); }
 
-DeclarativeFunctionValue *ValueSystem::buildDeclarativeFunction(FunctionDeclaration *decl) { return new DeclarativeFunctionValue(decl); }
+Wrapper(DeclarativeFunctionValue) ValueSystem::buildDeclarativeFunction(FunctionDeclaration *decl) { return Wrap(DeclarativeFunctionValue, new DeclarativeFunctionValue(decl)); }
 
-MethodValue *ValueSystem::buildMethod(ClassDeclaration *clazz, FunctionDeclaration *decl, ObjectValue *obj) { return new MethodValue(clazz, decl, obj); }
+Wrapper(MethodValue) ValueSystem::buildMethod(ClassDeclaration *clazz, FunctionDeclaration *decl, const Wrapper(ObjectValue) &obj) { return Wrap(MethodValue, Wrap(MethodValue, new MethodValue(clazz, decl, obj))); }
 
-DeclarativeClassValue *ValueSystem::buildDeclarativeClass(ClassDeclaration *decl) { return new DeclarativeClassValue(decl); }
+Wrapper(DeclarativeClassValue) ValueSystem::buildDeclarativeClass(ClassDeclaration *decl) { return Wrap(DeclarativeClassValue, new DeclarativeClassValue(decl)); }
 
-DeclarativeObjectValue *ValueSystem::buildDeclarativeObject(DeclarativeClassValue *clazz) { return new DeclarativeObjectValue(clazz); }
+Wrapper(DeclarativeObjectValue) ValueSystem::buildDeclarativeObject(Wrapper(DeclarativeClassValue) clazz) { return Wrap(DeclarativeObjectValue, new DeclarativeObjectValue(clazz)); }
 
-bool ValueSystem::isTrue(IValue *value) {
-    if (instanceof<ObjectValue *>(value)) return !as<ObjectValue *>(value)->isNull();
-    if (instanceof<NumberValue *>(value)) return as<NumberValue *>(value)->isTrue();
-    if (instanceof<BooleanValue *>(value)) return as<BooleanValue *>(value)->getValue();
+bool ValueSystem::isTrue(const Wrapper(IValue) &value) {
+    if (instanceof<ObjectValue *>(value)) return !downcast<ObjectValue>(value)->isNull();
+    if (instanceof<NumberValue *>(value)) return downcast<NumberValue>(value)->isTrue();
+    if (instanceof<BooleanValue *>(value)) return downcast<BooleanValue>(value)->getValue();
     return false;
 }

@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include "types.h"
 
 class FunctionDeclaration;
 
@@ -20,9 +21,9 @@ public:
 
     void compile(FunctionDeclaration *funcDecl);
 
-    IValue *invoke(SymbolProvider *tbl, FunctionDeclaration *fnt, std::vector<IValue *> args);
+    std::shared_ptr<IValue> invoke(SymbolProvider *tbl, FunctionDeclaration *fnt, std::vector<std::shared_ptr<IValue> > args);
 
-    IValue *evaluate(SymbolProvider *tbl, Expression *exp);
+    std::shared_ptr<IValue> evaluate(SymbolProvider *tbl, Expression *exp);
 
 private:
 

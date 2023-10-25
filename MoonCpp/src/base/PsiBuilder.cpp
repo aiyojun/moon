@@ -159,13 +159,16 @@ BlockStatement *PsiBuilder::handleBlockStatement(MoonParser::BlockStatementConte
     return _r;
 }
 
+// ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=')
+std::vector<std::string> assignmentOperators{"=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^="};
+
 Expression *PsiBuilder::handleExpression(MoonParser::ExpressionContext *tree) {
     if (PsiUtils::isExpressionContext(tree->children[0])) {
         if (tree->children.size() == 2) {
             return handleUnaryExpression(tree);
         } else if (tree->children.size() == 3) {
             auto mid = tree->children[1];
-            if (PsiUtils::isTerm(mid) && mid->getText() == "=") {
+            if (PsiUtils::isTerm(mid) && std::find(assignmentOperators.begin(), assignmentOperators.end(), mid->getText()) != assignmentOperators.end()) { // && mid->getText() == "="
                 return handleAssignmentExpression(tree);
             } else {
                 return handleBinaryExpression(tree);
@@ -224,6 +227,7 @@ Expression *PsiBuilder::handleAccessExpression(MoonParser::ExpressionContext *tr
 
 AssignmentExpression *PsiBuilder::handleAssignmentExpression(MoonParser::ExpressionContext *tree) {
     auto _r = new AssignmentExpression;
+    _r->setOperator(tree->children[1]->getText());
     _r->setLeft(handleExpression(tree->expression(0)));
     _r->setRight(handleExpression(tree->expression(1)));
     return _r;
