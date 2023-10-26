@@ -10,15 +10,13 @@ class RealNumber {
 public:
     RealNumber() = default;
 
-//    RealNumber(int n);
-//
+    RealNumber(int n);
+
 //    RealNumber(long n);
 //
 //    RealNumber(float n);
 //
 //    RealNumber(double n);
-
-    RealNumber(const std::vector<unsigned char> &n);
 
     RealNumber(const std::string &n);
 
@@ -30,19 +28,26 @@ public:
 
     RealNumber& operator=(const RealNumber &r);
 
-    RealNumber operator+(RealNumber &r);
+    RealNumber operator+(const RealNumber &r) const;
 
-    RealNumber operator-(RealNumber &r);
+    RealNumber operator-(const RealNumber &r) const;
 
-    RealNumber operator*(RealNumber &r);
+    RealNumber operator*(const RealNumber &r) const;
 
-    RealNumber div(RealNumber &r);
+    RealNumber operator/(const RealNumber &r) const;
 
-    RealNumber mod(RealNumber &r);
+    RealNumber operator%(const RealNumber &r) const;
 
-    int compare(RealNumber &r);
+    void div(const RealNumber &dividend, RealNumber &quotients, RealNumber &remainder) const;
 
-    RealNumber pow(int n);
+    int compare(const RealNumber &r) const;
+
+//    RealNumber pow(int n);
+
+    int cast_int();
+
+    RealNumber(const std::vector<unsigned char> &v);
+private:
 
     friend std::string to_string(const RealNumber &r);
 
@@ -50,6 +55,10 @@ public:
 
 private:
     std::vector<unsigned char> _dec;
+
+    bool _pre = true;
+
+    int _dot = 0;
 
 //    std::vector<unsigned char> _bin;
 };
