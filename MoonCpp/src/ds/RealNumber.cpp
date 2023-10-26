@@ -4,28 +4,15 @@
 
 namespace {
 
-    using DecimalSequence = std::vector<unsigned char>;
+    using HexadecimalSequence = std::vector<int>;
 
-//    DecimalSequence str2dec(const std::string &str) {
-//        DecimalSequence _r;
-//        for (const auto &c: str) {
-//            if (c >= 48 && c <= 57)
-//                _r.emplace_back(c - 48);
-//        }
-//        return _r;
-//    }
-//
-//    DecimalSequence dec2bin(const DecimalSequence &dec) {
-//        DecimalSequence _r;
-//        return _r;
-//    }
+    using DecimalSequence = std::vector<unsigned char>;
 
     DecimalSequence ln_int2dec_seq(int n) {
         DecimalSequence _r;
-        int y = n, i = 0;
+        int y = n;
         while (true) {
-            i++;
-            _r.emplace_back(y % 10);
+            _r.emplace_back((unsigned char) y % 10);
             y = y / 10;
             if (!y)
                 break;
@@ -35,7 +22,7 @@ namespace {
 
     int ln_cast2int(const DecimalSequence &vec) {
         if (vec.empty()) return 0;
-        int _r = vec[0];
+        int _r = (int) vec[0];
         for (size_t i = 1; i < vec.size(); i++) {
             _r += (int) (vec[i] * 10 * i);
         }
@@ -53,7 +40,11 @@ namespace {
     void amend_zero(DecimalSequence& num) {
         int len = (int) num.size();
         for (int i = len - 1; i >= 0; i--) {
-            if (num[i]) break; else num.pop_back();
+            if (num[i] == 0) {
+                num.pop_back();
+            } else {
+                break;
+            }
         }
     }
 
@@ -154,7 +145,14 @@ namespace {
         return _r;
     }
 
+    bool zero_dec_seq(const DecimalSequence& num) {
+        DecimalSequence r(num);
+        amend_zero(r);
+        return r.empty();
+    }
+
     DecimalSequence ln_mul(const DecimalSequence& num1, const DecimalSequence& num2) {
+        if (zero_dec_seq(num1) || zero_dec_seq(num2)) return {};
         DecimalSequence _r, _x;
         for (size_t i = 0; i < num2.size(); i++) {
             _x = carry_multiply(num1, num2[i], i);
@@ -174,6 +172,11 @@ namespace {
 
     void ln_div(const DecimalSequence &num1, const DecimalSequence &dividend,
                 DecimalSequence &quotients, DecimalSequence &remainder) {
+        if (ln_compare(num1, dividend) < 0) {
+            quotients.clear();
+            remainder = num1;
+            return;
+        }
         int _p = (int) (num1.size() - dividend.size() - 1);
         DecimalSequence divisor(x_slice(num1, dividend.size()));
         if (ln_compare(dividend, divisor) > 0) {
@@ -182,6 +185,7 @@ namespace {
         }
         int i = 0;
         for (;;) {
+            amend_zero(divisor);
             for (i = 0; i < 10; i++) {
                 DecimalSequence x = ln_mul(dividend, DecimalSequence{(unsigned char ) i});
                 DecimalSequence y = ln_mul(dividend, DecimalSequence{(unsigned char ) (i + 1)});
@@ -189,9 +193,6 @@ namespace {
                     quotients.emplace_back(i);
                     remainder = ln_minus(divisor, x);
                     amend_zero(remainder);
-//                    std::cout << RealNumber(dividend) << " /- "
-//                        << RealNumber(divisor) << " = "
-//                        << to_string(quotients) << " --> remainder : " << RealNumber(remainder) << std::endl;
                     break;
                 }
             }
@@ -206,17 +207,85 @@ namespace {
                     break;
                 }
             }
-            if (i == num1.size()) {
+            if (i == -1) {
                 remainder = divisor;
                 break;
             }
         }
         std::reverse(quotients.begin(), quotients.end());
+        amend_zero(quotients);
+        amend_zero(remainder);
+    }
+
+    DecimalSequence hex2dec(const HexadecimalSequence &hex) {
+        DecimalSequence _r;
+        RealNumber rn;
+        for (int i = (int) hex.size() - 1; i >= 0; i--) {
+            _r = ln_plus(ln_mul(_r, ln_int2dec_seq(16)), ln_int2dec_seq(hex[i]));
+        }
+        return _r;
+    }
+
+    HexadecimalSequence ln_band(const HexadecimalSequence &num1, const HexadecimalSequence& num2) {
+        HexadecimalSequence _r;
+        const HexadecimalSequence *p0, *p1;
+        if (num1.size() < num2.size()) {
+            p0 = &num1; p1 = &num2;
+        } else {
+            p0 = &num2; p1 = &num1;
+        }
+        for (int i = 0; i < (*p0).size(); i++) {
+            _r.emplace_back((*p0)[i] & (*p1)[i]);
+        }
+        return _r;
+    }
+
+    HexadecimalSequence ln_bor(const HexadecimalSequence &num1, const HexadecimalSequence& num2) {
+        HexadecimalSequence _r;
+        const HexadecimalSequence *p0, *p1;
+        if (num1.size() < num2.size()) {
+            p0 = &num1; p1 = &num2;
+        } else {
+            p0 = &num2; p1 = &num1;
+        }
+        for (int i = 0; i < (*p0).size(); i++) {
+            _r.emplace_back((*p0)[i] | (*p1)[i]);
+        }
+        for (int i = (int) (*p0).size(); i < (*p1).size(); i++) {
+            _r.emplace_back((*p1)[i]);
+        }
+        return _r;
+    }
+
+    HexadecimalSequence ln_bxor(const HexadecimalSequence &num1, const HexadecimalSequence& num2) {
+        HexadecimalSequence _r;
+        const HexadecimalSequence *p0, *p1;
+        if (num1.size() < num2.size()) {
+            p0 = &num1; p1 = &num2;
+        } else {
+            p0 = &num2; p1 = &num1;
+        }
+        for (int i = 0; i < (*p0).size(); i++) {
+            _r.emplace_back((*p0)[i] ^ (*p1)[i]);
+        }
+        for (int i = (int) (*p0).size(); i < (*p1).size(); i++) {
+            _r.emplace_back(0 ^ (*p1)[i]);
+        }
+        return _r;
+    }
+
+    HexadecimalSequence ln_binv(const HexadecimalSequence &num) {
+        HexadecimalSequence _r;
+        for (int i = 0; i < num.size(); i++) {
+            _r.emplace_back(15 - num[i]);
+        }
+        return _r;
     }
 
 }
 
 RealNumber::RealNumber(int n) {
+    if (n == 0) return;
     _dec = ln_int2dec_seq(n);
 }
 
@@ -298,3 +367,68 @@ RealNumber RealNumber::operator%(const RealNumber &r) const {
     ln_div(_dec, r._dec, quotients._dec, remainder._dec);
     return remainder;
 }
+
+void RealNumber::cache_hex() {
+    auto dividend = RealNumber(16);
+    RealNumber quotients, remainder;
+    std::vector<int> _r;
+    RealNumber y = *this;
+    while (true) {
+        quotients.clear(); remainder.clear();
+        ln_div(y._dec, dividend._dec, quotients._dec, remainder._dec);
+        _r.emplace_back(remainder.cast_int());
+        y = quotients;
+        if (!y.compare(0))
+            break;
+    }
+    _hex = _r;
+}
+
+RealNumber RealNumber::operator|(RealNumber &r) {
+    if (_hex.empty()) cache_hex();
+    if (r._hex.empty()) r.cache_hex();
+    RealNumber _r;
+    _r._hex = ln_bor(_hex, r._hex);
+    _r._dec = hex2dec(_r._hex);
+    return _r;
+}
+
+RealNumber RealNumber::operator&(RealNumber &r) {
+    if (_hex.empty()) cache_hex();
+    if (r._hex.empty()) r.cache_hex();
+    RealNumber _r;
+    _r._hex = ln_band(_hex, r._hex);
+    _r._dec = hex2dec(_r._hex);
+    return _r;
+}
+
+RealNumber RealNumber::operator^(RealNumber &r) {
+    if (_hex.empty()) cache_hex();
+    if (r._hex.empty()) r.cache_hex();
+    RealNumber _r;
+    _r._hex = ln_bxor(_hex, r._hex);
+    _r._dec = hex2dec(_r._hex);
+    return _r;
+}
+
+RealNumber RealNumber::operator~() {
+    if (_hex.empty()) cache_hex();
+    RealNumber _r;
+    _r._hex = ln_binv(_hex);
+    _r._dec = hex2dec(_r._hex);
+    return _r;
+}
+
+std::string RealNumber::to_hex() {
+    if (_hex.empty()) cache_hex();
+    std::string _rr("0x");
+    for (int i = (int) _hex.size() - 1; i >= 0; i--) {
+        if (_hex[i] >= 10) {
+            _rr += (char) (_hex[i] - 10 + 65);
+        } else {
+            _rr += std::to_string(_hex[i]);
+        }
+    }
+    return _rr;
+}
+

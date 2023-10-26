@@ -5,24 +5,17 @@
 #include <vector>
 #include <ostream>
 
-// + - * / % >> << | & ^ ~
 class RealNumber {
 public:
     RealNumber() = default;
 
     RealNumber(int n);
 
-//    RealNumber(long n);
-//
-//    RealNumber(float n);
-//
-//    RealNumber(double n);
-
     RealNumber(const std::string &n);
 
     RealNumber(const RealNumber &r);
 
-//    ~RealNumber();
+    RealNumber(const std::vector<unsigned char> &v);
 
     void clear();
 
@@ -38,16 +31,24 @@ public:
 
     RealNumber operator%(const RealNumber &r) const;
 
+    RealNumber operator|(RealNumber &r);
+
+    RealNumber operator&(RealNumber &r);
+
+    RealNumber operator^(RealNumber &r);
+
+    RealNumber operator~();
+
     void div(const RealNumber &dividend, RealNumber &quotients, RealNumber &remainder) const;
 
     int compare(const RealNumber &r) const;
 
-//    RealNumber pow(int n);
-
     int cast_int();
 
-    RealNumber(const std::vector<unsigned char> &v);
+    std::string to_hex();
+
 private:
+    void cache_hex();
 
     friend std::string to_string(const RealNumber &r);
 
@@ -55,12 +56,9 @@ private:
 
 private:
     std::vector<unsigned char> _dec;
-
+    std::vector<int> _hex;
     bool _pre = true;
-
     int _dot = 0;
-
-//    std::vector<unsigned char> _bin;
 };
 
 std::string to_string(const RealNumber &r);
