@@ -112,8 +112,8 @@ export class BytecodeCompiler {
     compile(func: FunctionDeclaration) {
         const [lc_0] = this.lbl()
         this._stack.push({type: 'function', end: lc_0})
-        this._block(func.body)
-        this._mark(lc_0)
+        this.handleBlock(func.body)
+        this.emitMark(lc_0)
         this._stack.pop()
         this.optimize()
         return this
@@ -188,111 +188,111 @@ export class BytecodeCompiler {
         this._bytecodes = _r
     }
 
-    private _if(stmt: IfStatement) {
+    private handleIf(stmt: IfStatement) {
         const [lc_0, lc_1] = this.lbl(2)
-        this._test(lc_0, stmt.test)
-        this._block(stmt.consequent)
-        this._goto(lc_1)
-        this._mark(lc_0)
+        this.emitTest(lc_0, stmt.test)
+        this.handleBlock(stmt.consequent)
+        this.emitGoto(lc_1)
+        this.emitMark(lc_0)
         if (stmt.alternate !== null) {
             if (stmt.alternate instanceof IfStatement) {
-                this._if(stmt.alternate)
+                this.handleIf(stmt.alternate)
             } else {
-                this._block(stmt.alternate)
+                this.handleBlock(stmt.alternate)
             }
         }
-        this._mark(lc_1)
+        this.emitMark(lc_1)
     }
 
-    private _block(stmts: BlockStatement) {
+    private handleBlock(stmts: BlockStatement) {
         for (let i = 0; i < stmts.body.length; i++) {
             const stmt = stmts.body[i]
             if (stmt instanceof Expression) {
-                this._eval(stmt)
+                this.emitEval(stmt)
             } else if (stmt instanceof BreakStatement) {
-                this._break(stmt)
+                this.handleBreak(stmt)
             } else if (stmt instanceof ContinueStatement) {
-                this._continue(stmt)
+                this.handleContinue(stmt)
             } else if (stmt instanceof ReturnStatement) {
-                this._return(stmt)
+                this.handleReturn(stmt)
             } else if (stmt instanceof IfStatement) {
-                this._if(stmt)
+                this.handleIf(stmt)
             } else if (stmt instanceof WhileStatement) {
-                this._while(stmt)
+                this.handleWhile(stmt)
             } else if (stmt instanceof ForStatement) {
-                this._for(stmt)
+                this.handleFor(stmt)
             }
         }
     }
 
-    private _break(stmt: BreakStatement) {
+    private handleBreak(stmt: BreakStatement) {
         const item = this.findLastLoop()
         if (!item)
             throw new Error(`found none loop!`)
-        this._goto(item.end)
+        this.emitGoto(item.end)
     }
 
-    private _continue(stmt: ContinueStatement) {
+    private handleContinue(stmt: ContinueStatement) {
         const item = this.findLastLoop()
         if (!item)
             throw new Error(`found none loop!`)
         if (item.type === 'while') {
-            this._goto(item.test)
+            this.emitGoto(item.test)
         } else if (item.type === 'for') {
-            this._goto(item.update)
+            this.emitGoto(item.update)
         }
     }
 
-    private _while(stmt: WhileStatement) {
+    private handleWhile(stmt: WhileStatement) {
         const [lc_0, lc_1] = this.lbl(2)
         this._stack.push({type: 'while', test: lc_0, end: lc_1})
-        this._mark(lc_0)
-        this._test(lc_1, stmt.test)
-        this._block(stmt.body)
-        this._goto(lc_0)
-        this._mark(lc_1)
+        this.emitMark(lc_0)
+        this.emitTest(lc_1, stmt.test)
+        this.handleBlock(stmt.body)
+        this.emitGoto(lc_0)
+        this.emitMark(lc_1)
         this._stack.pop()
     }
 
-    private _for(stmt: ForStatement) {
+    private handleFor(stmt: ForStatement) {
         const [lc_0, lc_1, lc_2] = this.lbl(3)
         this._stack.push({type: 'for', update: lc_2, end: lc_1})
-        this._eval(stmt.init)
-        this._mark(lc_0)
-        this._test(lc_1, stmt.test)
-        this._block(stmt.body)
-        this._mark(lc_2)
-        this._eval(stmt.update)
-        this._goto(lc_0)
-        this._mark(lc_1)
+        this.emitEval(stmt.init)
+        this.emitMark(lc_0)
+        this.emitTest(lc_1, stmt.test)
+        this.handleBlock(stmt.body)
+        this.emitMark(lc_2)
+        this.emitEval(stmt.update)
+        this.emitGoto(lc_0)
+        this.emitMark(lc_1)
         this._stack.pop()
     }
 
-    private _return(stmt: ReturnStatement) {
+    private handleReturn(stmt: ReturnStatement) {
         if (stmt.argument !== null)
-            this._ret(stmt.argument)
-        this._goto(this._stack[0].end)
+            this.emitRet(stmt.argument)
+        this.emitGoto(this._stack[0].end)
     }
 
-    private _test(another: string, expr: Expression) {
+    private emitTest(another: string, expr: Expression) {
         this._theUsedLblIdx.set(another, -1)
         this.append(BtcTest.build(expr, another))
     }
 
-    private _eval(expr: Expression) {
+    private emitEval(expr: Expression) {
         this.append(BtcEval.build(expr))
     }
 
-    private _goto(lc: string) {
+    private emitGoto(lc: string) {
         this._theUsedLblIdx.set(lc, -1)
         this.append(BtcGoto.build(lc))
     }
 
-    private _mark(lc: string) {
+    private emitMark(lc: string) {
         this.append(BtcMark.build(lc))
     }
 
-    private _ret(expr: Expression) {
+    private emitRet(expr: Expression) {
         this.append(BtcRet.build(expr))
     }
 

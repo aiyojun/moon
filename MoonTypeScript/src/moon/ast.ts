@@ -58,7 +58,13 @@ import {
     VariableDeclaration,
     WhileStatement
 } from "./psi.js";
-import {extractString} from "./psiutils.js";
+
+function extractString(text: string) {
+    if (text[0] === '\'' && text[text.length - 1] === '\'') return text.substring(1, text.length - 1)
+    else if (text[0] === '"' && text[text.length - 1] === '"') return text.substring(1, text.length - 1)
+    else if (text.startsWith('r"') && text[text.length - 1] === '"') return text.substring(2, text.length - 1)
+    else return ""
+}
 
 export class MoonLexerErrorListener extends ErrorListener<Token> {
     syntaxError(recognizer: Recognizer<Token>, offendingSymbol: Token, line: number, column: number, msg: string, e: RecognitionException | undefined): void {
