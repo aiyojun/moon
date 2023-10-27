@@ -19,6 +19,13 @@ import {IValue, ValueSystem} from "./valuesystem";
 // build code flow by psi(function&statement)
 // code flow supported by state/virtual machine
 
+
+/**
+ * The definition of bytecode is so heavy!
+ * @todo: Replace the original bytecode class by real bytecode!
+ */
+
+
 export interface Bytecode {
     toString(): string;
 }
@@ -119,16 +126,16 @@ export class BytecodeCompiler {
         return this
     }
 
-    private _riskCount: number = 0;
+    // private _riskCount: number = 0;
 
     interpret(evaluator: Evaluator): IValue { // jit
         this._csip = -1
-        this._riskCount = 0
+        // this._riskCount = 0
         while (1) {
-            this._riskCount++
-            if (this._riskCount > 100) {
-                throw new Error(`vm risk`)
-            }
+            // this._riskCount++
+            // if (this._riskCount > 100) {
+            //     throw new Error(`vm risk`)
+            // }
             const btc = this.next()
             if (!btc)
                 break
