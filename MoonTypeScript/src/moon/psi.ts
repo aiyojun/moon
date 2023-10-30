@@ -1,6 +1,6 @@
 // PSI: program structure interface
 
-import {ParserRuleContext, ParseTree, RuleNode, TerminalNode} from "antlr4";
+import {ParserRuleContext, ParseTree, TerminalNode} from "antlr4";
 
 export class TextRange {
     line: number;
@@ -61,9 +61,7 @@ export class PsiElement {
 
 export class Program extends PsiElement {
     body: Declaration[] = [];
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "Program", body: this.body.map(s => s?.dumps())};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "Program", body: this.body.map(s => s?.dumps())};}
     mount() {
         this.body.forEach(decl => {
             decl?.relate(this)
@@ -72,14 +70,11 @@ export class Program extends PsiElement {
     }
 }
 
-export class Declaration extends PsiElement {
-}
+export abstract class Declaration extends PsiElement {}
 
-export class Statement extends PsiElement {
-}
+export abstract class Statement extends PsiElement {}
 
-export class Expression extends PsiElement {
-}
+export abstract class Expression extends PsiElement {}
 
 export class ClassDeclaration extends Declaration {
     private _id: Identifier;
@@ -108,9 +103,7 @@ export class FunctionDeclaration extends Declaration {
     set id(id: Identifier) { this._id = id }
     get body(): BlockStatement { return this._body }
     set body(e: BlockStatement) { this._body = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "FunctionDeclaration", id: this._id?.dumps(), params: this.params.map(p => p?.dumps()), body: this._body?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "FunctionDeclaration", id: this._id?.dumps(), params: this.params.map(p => p?.dumps()), body: this._body?.dumps()};}
     mount() {
         this._id?.relate(this); this._id?.mount()
         this._body?.relate(this); this._body?.mount()
@@ -121,13 +114,14 @@ export class FunctionDeclaration extends Declaration {
 export class VariableDeclaration extends Declaration {
     private _id: Identifier;
     private _init: Expression;
+    private _kind: string;
+    get kind(): string { return this._kind }
+    set kind(k: string) { this._kind = k }
     get id(): Identifier { return this._id }
     set id(id: Identifier) { this._id = id }
     get init(): Expression { return this._init }
     set init(e: Expression) { this._init = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "VariableDeclaration", id: this._id?.dumps(), init: this._init?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "VariableDeclaration", id: this._id?.dumps(), init: this._init?.dumps()};}
     mount() {
         this._id?.relate(this); this._id?.mount()
         this._init?.relate(this); this._init?.mount()
@@ -136,12 +130,8 @@ export class VariableDeclaration extends Declaration {
 
 export class BlockStatement extends Statement {
     body: Statement[] = [];
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "BlockStatement", body: this.body.map(s => s?.dumps())};
-    }
-    mount() {
-        this.body.forEach(stmt => { stmt?.relate(this); stmt?.mount() })
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "BlockStatement", body: this.body.map(s => s?.dumps())};}
+    mount() {this.body.forEach(stmt => { stmt?.relate(this); stmt?.mount() })}
 }
 
 export class IfStatement extends Statement {
@@ -154,9 +144,7 @@ export class IfStatement extends Statement {
     set consequent(e: BlockStatement) { this._consequent = e }
     get alternate(): IfStatement | BlockStatement { return this._alternate }
     set alternate(e: IfStatement | BlockStatement) { this._alternate = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "IfStatement", test: this._test?.dumps(), consequent: this._consequent?.dumps(), alternate: this._alternate?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "IfStatement", test: this._test?.dumps(), consequent: this._consequent?.dumps(), alternate: this._alternate?.dumps()};}
     mount() {
         this._test?.relate(this); this._test?.mount()
         this._consequent?.relate(this); this._consequent?.mount()
@@ -180,9 +168,7 @@ export class ForStatement extends LoopStatement {
     set update(e: Expression) { this._update = e }
     get body(): BlockStatement { return this._body }
     set body(e: BlockStatement) { this._body = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "ForStatement", init: this._init?.dumps(), test: this._test?.dumps(), update: this._update?.dumps(), body: this._body?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "ForStatement", init: this._init?.dumps(), test: this._test?.dumps(), update: this._update?.dumps(), body: this._body?.dumps()};}
     mount() {
         this._init?.relate(this); this._init?.mount()
         this._test?.relate(this); this._test?.mount()
@@ -201,9 +187,7 @@ export class ForeachStatement extends LoopStatement {
     set right(e: Expression) { this._right = e }
     get body(): BlockStatement { return this._body }
     set body(e: BlockStatement) { this._body = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "ForeachStatement", left: this._left?.dumps(), right: this._right?.dumps(), body: this._body?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "ForeachStatement", left: this._left?.dumps(), right: this._right?.dumps(), body: this._body?.dumps()};}
     mount() {
         this._left?.relate(this); this._left?.mount()
         this._right?.relate(this); this._right?.mount()
@@ -218,9 +202,7 @@ export class WhileStatement extends LoopStatement {
     set test(e: Expression) { this._test = e }
     get body(): BlockStatement { return this._body }
     set body(e: BlockStatement) { this._body = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "WhileStatement", test: this._test?.dumps(), body: this._body?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "WhileStatement", test: this._test?.dumps(), body: this._body?.dumps()};}
     mount() {
         this._test?.relate(this); this._test?.mount()
         this._body?.relate(this); this._body?.mount()
@@ -231,9 +213,7 @@ export class ReturnStatement extends Statement {
     private _argument: Expression;
     get argument(): Expression { return this._argument }
     set argument(e: Expression) { this._argument = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "ReturnStatement", argument: this._argument?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "ReturnStatement", argument: this._argument?.dumps()};}
     mount() {
         this._argument?.relate(this); this._argument?.mount()
     }
@@ -253,9 +233,7 @@ export class BinaryExpression extends Expression {
     private _right: Expression;
     get right(): Expression { return this._right }
     set right(e: Expression) { this._right = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "BinaryExpression", operator: this.operator, left: this._left?.dumps(), right: this._right?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "BinaryExpression", operator: this.operator, left: this._left?.dumps(), right: this._right?.dumps()};}
     toString(): string { return `${this._left.toString()} ${this.operator} ${this._right.toString()}`}
     mount() {
         this._left?.relate(this); this._left?.mount()
@@ -269,9 +247,7 @@ export class UnaryExpression extends Expression {
     private _argument: Expression;
     get argument(): Expression { return this._argument }
     set argument(e: Expression) { this._argument = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "UnaryExpression", operator: this.operator, prefix: this.prefix, argument: this._argument?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "UnaryExpression", operator: this.operator, prefix: this.prefix, argument: this._argument?.dumps()};}
     toString(): string { return `${this.prefix ? `${this.operator} ` : ''}${this._argument.toString()}${!this.prefix ? ` ${this.operator}` : ''}`}
     mount() {
         this._argument?.relate(this); this._argument?.mount()
@@ -285,9 +261,7 @@ export class NewExpression extends Expression {
     set callee(id: Identifier) {
         this._callee = id;
     }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "NewExpression", callee: this._callee?.dumps(), arguments: this.arguments.map(arg => arg?.dumps())};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "NewExpression", callee: this._callee?.dumps(), arguments: this.arguments.map(arg => arg?.dumps())};}
     toString(): string { return `new ${this._callee}`}
     mount() {
         this._callee?.relate(this); this._callee?.mount()
@@ -303,12 +277,8 @@ export class CallExpression extends Expression {
     private _callee: Expression;
     get callee(): Expression { return this._callee }
     set callee(e: Expression) { this._callee = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "CallExpression", callee: this._callee?.dumps(), arguments: this.arguments.map(arg => arg?.dumps())};
-    }
-    toString(): string {
-        return `${this._callee?.toString()}(${this.arguments.map(arg => arg.toString()).join(', ')})`
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "CallExpression", callee: this._callee?.dumps(), arguments: this.arguments.map(arg => arg?.dumps())};}
+    toString(): string {return `${this._callee?.toString()}(${this.arguments.map(arg => arg.toString()).join(', ')})`}
     mount() {
         this._callee?.relate(this); this._callee?.mount()
         for (let i = 0; i < this.arguments.length; i++) {
@@ -325,12 +295,8 @@ export class MemberExpression extends Expression {
     set object_(e: Expression) { this._object_ = e }
     get property(): Expression { return this._property }
     set property(e: Expression) { this._property = e; }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "MemberExpression", "object": this._object_?.dumps(), property: this._property?.dumps()};
-    }
-    toString(): string {
-        return `${this._object_.toString()}.${this._property.toString()}`
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "MemberExpression", "object": this._object_?.dumps(), property: this._property?.dumps()};}
+    toString(): string {return `${this._object_.toString()}.${this._property.toString()}`}
     mount() {
         this._object_?.relate(this); this._object_?.mount()
         // this._property?.relate(this); this._property?.mount()
@@ -344,9 +310,7 @@ export class DynamicMemberExpression extends Expression {
     set object_(e: Expression) { this._object_ = e }
     get property(): Expression { return this._property }
     set property(e: Expression) { this._property = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "DynamicMemberExpression", "object": this._object_?.dumps(), property: this._property?.dumps()};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "DynamicMemberExpression", "object": this._object_?.dumps(), property: this._property?.dumps()};}
     mount() {
         this._object_?.relate(this); this._object_?.mount()
         this._property?.relate(this); this._property?.mount()
@@ -363,12 +327,8 @@ export class AssignmentExpression extends Expression {
     set left(e: Expression) { this._left = e }
     get right(): Expression { return this._right }
     set right(e: Expression) { this._right = e }
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "AssignmentExpression", operator: "=", left: this._left?.dumps(), right: this._right?.dumps()};
-    }
-    toString(): string {
-        return `${this._left.toString()} = ${this._right.toString()}`
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "AssignmentExpression", operator: "=", left: this._left?.dumps(), right: this._right?.dumps()};}
+    toString(): string {return `${this._left.toString()} = ${this._right.toString()}`}
     mount() {
         this._left?.relate(this); this._left?.mount()
         this._right?.relate(this); this._right?.mount()
@@ -377,9 +337,7 @@ export class AssignmentExpression extends Expression {
 
 export class Identifier extends Expression {
     name: string;
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "Identifier", name: this.name};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "Identifier", name: this.name};}
     static build(name: string): Identifier {
         const r = new Identifier()
         r.name = name
@@ -390,9 +348,7 @@ export class Identifier extends Expression {
 
 export class Literal extends Expression {
     value: any;
-    dumps(): Record<string, any> {
-        return {...super.dumps(), type: "Literal", value: this.value};
-    }
+    dumps(): Record<string, any> {return {...super.dumps(), type: "Literal", value: this.value};}
     static build(v: any): Literal {
         const r = new Literal()
         r.value = v instanceof Literal ? v.value : v

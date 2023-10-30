@@ -9,11 +9,11 @@ import {
     FunctionDeclaration,
     IfStatement,
     ReturnStatement,
-    WhileStatement
+    WhileStatement,
 } from "./psi.js";
 import {Evaluator} from "./eval.js";
-import {ISymbol, ScopeProvider} from "./scope";
-import {IValue, ValueSystem} from "./valuesystem";
+import {ISymbol, ScopeProvider} from "./scope.js";
+import {IValue, ValueSystem} from "./valuesystem.js";
 
 // here, build linear bytecode
 // build code flow by psi(function&statement)
@@ -119,7 +119,7 @@ export class BytecodeCompiler {
     compile(func: FunctionDeclaration) {
         const [lc_0] = this.lbl()
         this._stack.push({type: 'function', end: lc_0})
-        this.handleBlock(func.body)
+        this.handleBlockStatement(func.body)
         this.emitMark(lc_0)
         this._stack.pop()
         this.optimize()
@@ -195,51 +195,51 @@ export class BytecodeCompiler {
         this._bytecodes = _r
     }
 
-    private handleIf(stmt: IfStatement) {
+    private handleIfStatement(stmt: IfStatement) {
         const [lc_0, lc_1] = this.lbl(2)
         this.emitTest(lc_0, stmt.test)
-        this.handleBlock(stmt.consequent)
+        this.handleBlockStatement(stmt.consequent)
         this.emitGoto(lc_1)
         this.emitMark(lc_0)
         if (stmt.alternate !== null) {
             if (stmt.alternate instanceof IfStatement) {
-                this.handleIf(stmt.alternate)
+                this.handleIfStatement(stmt.alternate)
             } else {
-                this.handleBlock(stmt.alternate)
+                this.handleBlockStatement(stmt.alternate)
             }
         }
         this.emitMark(lc_1)
     }
 
-    private handleBlock(stmts: BlockStatement) {
+    private handleBlockStatement(stmts: BlockStatement) {
         for (let i = 0; i < stmts.body.length; i++) {
             const stmt = stmts.body[i]
             if (stmt instanceof Expression) {
                 this.emitEval(stmt)
             } else if (stmt instanceof BreakStatement) {
-                this.handleBreak(stmt)
+                this.handleBreakStatement(stmt)
             } else if (stmt instanceof ContinueStatement) {
-                this.handleContinue(stmt)
+                this.handleContinueStatement(stmt)
             } else if (stmt instanceof ReturnStatement) {
-                this.handleReturn(stmt)
+                this.handleReturnStatement(stmt)
             } else if (stmt instanceof IfStatement) {
-                this.handleIf(stmt)
+                this.handleIfStatement(stmt)
             } else if (stmt instanceof WhileStatement) {
-                this.handleWhile(stmt)
+                this.handleWhileStatement(stmt)
             } else if (stmt instanceof ForStatement) {
-                this.handleFor(stmt)
+                this.handleForStatement(stmt)
             }
         }
     }
 
-    private handleBreak(stmt: BreakStatement) {
+    private handleBreakStatement(stmt: BreakStatement) {
         const item = this.findLastLoop()
         if (!item)
             throw new Error(`found none loop!`)
         this.emitGoto(item.end)
     }
 
-    private handleContinue(stmt: ContinueStatement) {
+    private handleContinueStatement(stmt: ContinueStatement) {
         const item = this.findLastLoop()
         if (!item)
             throw new Error(`found none loop!`)
@@ -250,24 +250,24 @@ export class BytecodeCompiler {
         }
     }
 
-    private handleWhile(stmt: WhileStatement) {
+    private handleWhileStatement(stmt: WhileStatement) {
         const [lc_0, lc_1] = this.lbl(2)
         this._stack.push({type: 'while', test: lc_0, end: lc_1})
         this.emitMark(lc_0)
         this.emitTest(lc_1, stmt.test)
-        this.handleBlock(stmt.body)
+        this.handleBlockStatement(stmt.body)
         this.emitGoto(lc_0)
         this.emitMark(lc_1)
         this._stack.pop()
     }
 
-    private handleFor(stmt: ForStatement) {
+    private handleForStatement(stmt: ForStatement) {
         const [lc_0, lc_1, lc_2] = this.lbl(3)
         this._stack.push({type: 'for', update: lc_2, end: lc_1})
         this.emitEval(stmt.init)
         this.emitMark(lc_0)
         this.emitTest(lc_1, stmt.test)
-        this.handleBlock(stmt.body)
+        this.handleBlockStatement(stmt.body)
         this.emitMark(lc_2)
         this.emitEval(stmt.update)
         this.emitGoto(lc_0)
@@ -275,7 +275,7 @@ export class BytecodeCompiler {
         this._stack.pop()
     }
 
-    private handleReturn(stmt: ReturnStatement) {
+    private handleReturnStatement(stmt: ReturnStatement) {
         if (stmt.argument !== null)
             this.emitRet(stmt.argument)
         this.emitGoto(this._stack[0].end)
@@ -330,10 +330,6 @@ export class BytecodeCompiler {
 
 export class VirtualMachine {
     private _btc: Map<FunctionDeclaration, BytecodeCompiler> = new Map
-
-    constructor() {
-
-    }
 
     compile(func: FunctionDeclaration) {
         if (this._btc.has(func)) return this

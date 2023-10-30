@@ -2,7 +2,6 @@ import {
     CharStream,
     CommonTokenStream,
     ErrorListener,
-    ParserRuleContext,
     ParseTree,
     TerminalNode,
     Token,
@@ -122,8 +121,9 @@ export class PsiBuilder {
 
     handleVariableDeclaration(tree: VariableDeclarationContext): VariableDeclaration {
         const v = new VariableDeclaration().setTextRange(tree)
-        v.id = this.handleIdentifier(tree.children[0] as TerminalNode)
-        v.init = this.handleExpression(tree.children[2] as ExpressionContext)
+        // v.kind = tree.children[0].getText()
+        v.id = this.handleIdentifier(tree.ID())
+        v.init = this.handleExpression(tree.expression())
         return v
     }
 
@@ -172,8 +172,8 @@ export class PsiBuilder {
             return l
         } else {
             const l = new ForeachStatement().setTextRange(tree)
-            l.left  = this.handleExpression(tree.children[2] as ExpressionContext)
-            l.right = this.handleExpression(tree.children[4] as ExpressionContext)
+            l.left  = this.handleExpression(tree.expression(0))
+            l.right = this.handleExpression(tree.expression(1))
             l.body  = this.handleBlockStatement(tree.children[tree.children.length - 1] as BlockStatementContext)
             return l
         }
