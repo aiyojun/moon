@@ -1,7 +1,8 @@
 #ifndef MOONCPP_STATEMENTS_H
 #define MOONCPP_STATEMENTS_H
 
-class Statement;
+#include <vector>
+#include "Statement.h"
 
 class Statements : public Statement {
 public:
