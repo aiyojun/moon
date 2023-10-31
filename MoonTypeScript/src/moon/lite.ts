@@ -3,6 +3,18 @@
 import * as psi from "./psi.js";
 
 export namespace Moon {
+    function walk(
+        el: psi.PsiElement,
+        onBefore: (e: psi.PsiElement) => boolean,
+        onAfter : (e: psi.PsiElement) => void = null
+    ) {
+        if (!el) return
+        if (onBefore(el)) return
+        for (const child of el.children()) {
+            walk(child, onBefore, onAfter)
+        }
+        if (onAfter) onAfter(el)
+    }
 
     // export enum LiteCode {
     //     //
@@ -143,9 +155,8 @@ export namespace Moon {
         }
 
         protected handleExpression(el: psi.Expression) {
-            psi.PsiElement.walk(el, (exp: psi.Expression) => {
-                return false
-            }, (exp: psi.Expression) => {
+            walk(el, (exp: psi.Expression) => false,
+                (exp: psi.Expression) => {
                 if (exp instanceof psi.Literal) {
                     this.handleLiteral(exp)
                     return

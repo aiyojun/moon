@@ -1,6 +1,5 @@
 import {ClassDeclaration, FunctionDeclaration} from "./psi.js";
-import {ISymbol, Scope, ScopeProvider} from "./scope.js";
-import {VirtualMachine} from "./vm.js";
+import {ISymbol, ScopeProvider} from "./scope.js";
 
 export class Ref {
     private _ptr: ObjectValue = null
@@ -119,6 +118,10 @@ export class ObjectValue extends IValue {
         return this._isNull
     }
 
+    keys() {
+        return Array.from(this._properties.keys());
+    }
+
     contains(property: string) {
         return this._properties.has(property)
     }
@@ -154,6 +157,8 @@ export class ObjectValue extends IValue {
 
 export class ArrayValue extends ObjectValue {
     private _item: IValue[] = []
+
+    size() { return this._item.length }
 
     setItem(i: number, v: IValue) {
         this._item[i] = v
@@ -196,22 +201,36 @@ export class StringValue extends ObjectValue {
     }
 }
 
+// export class FutureValue extends IValue {
+//     private _value: Promise<any>;
+//
+//     set value(p: Promise<any>) { this._value = p }
+//
+//     get value() { return this._value }
+//
+//     async get() { return await this._value }
+// }
+
+export interface Executor {
+    execute(scope: ScopeProvider, decl: FunctionDeclaration, ...args: IValue[]): Promise<IValue>;
+}
+
 export abstract class CallableValue extends ObjectValue {
     protected _scope: ScopeProvider
 
-    protected _vm: VirtualMachine
+    protected _executor: Executor
 
     setScope(scope: ScopeProvider) {
         this._scope = scope
         return this
     }
 
-    setVM(vm: VirtualMachine) {
-        this._vm = vm
+    setExecutor(executor: Executor) {
+        this._executor = executor
         return this
     }
 
-    abstract invoke(...args: IValue[]): IValue;
+    abstract invoke(...args: IValue[]): Promise<IValue>;
 }
 
 export class DeclarativeFunctionValue extends CallableValue {
@@ -220,8 +239,8 @@ export class DeclarativeFunctionValue extends CallableValue {
         this._isNull = false
     }
 
-    invoke(...args: IValue[]): IValue {
-        return this._vm.invoke(this._scope, this.decl, args);
+    async invoke(...args: IValue[]): Promise<IValue> {
+        return await this._executor.execute(this._scope, this.decl, ...args);
     }
 
     toString(): string {
@@ -240,11 +259,9 @@ export class MethodValue extends CallableValue {
         super();
     }
 
-    invoke(...args: IValue[]): IValue {
+    async invoke(...args: IValue[]): Promise<IValue> {
         this._scope.buildScope()
-        const _s = new Scope()
-        _s.add(new ISymbol('self', this.obj))
-        const _r = this._vm.invoke(this._scope.derive(_s), this.decl, args)
+        const _r = await this._executor.execute(this._scope.derive().buildScope().add(new ISymbol('self', this.obj)), this.decl, ...args)
         this._scope.popScope()
         return _r;
     }
@@ -316,5 +333,27 @@ export class ValueSystem {
         if (v instanceof NumberValue) return v.value !== 0
         if (v instanceof BooleanValue) return v.value
         return false
+    }
+
+    static valueOf(iv: IValue): any {
+        if (iv instanceof StringValue ) return iv.value
+        if (iv instanceof NumberValue ) return iv.value
+        if (iv instanceof BooleanValue) return iv.value
+        if (iv instanceof ObjectValue && iv.isNull()) return null
+        if (iv instanceof ObjectValue && !iv.isNull() && iv instanceof ArrayValue) {
+            const _r: Record<string, any>[] = []
+            for (let i = 0; i < iv.size(); i++) {
+                _r.push(ValueSystem.valueOf(iv.getItem(i)))
+            }
+            return _r
+        }
+        if (iv instanceof ObjectValue) {
+            const _r: Record<string, any> = {}
+            for (const key of iv.keys()) {
+                _r[key] = iv.getProperty(key)
+            }
+            return _r
+        }
+        return null
     }
 }

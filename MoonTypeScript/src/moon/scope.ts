@@ -1,45 +1,33 @@
 import {ClassDeclaration, FunctionDeclaration, VariableDeclaration} from "./psi.js";
 import {IValue, ValueSystem} from "./valuesystem.js";
 
-export class Scope {
+export class ISymbol {
+    private _id: string = null
+    private _value: IValue = null
+    constructor(id: string, value: IValue) { this._id = id; this.value = value }
+    getName(): string { return this._id }
+    get value() { return this._value }
+    set value(value: IValue) { this._value = value }
+    toString() { return this._id + " : " + this._value?.toString() }
+}
+
+class Scope {
     private _symbols: Map<string, ISymbol> = new Map;
-
-    contains(name: string): boolean {
-        return this._symbols.has(name)
-    }
-
-    get(name: string): ISymbol {
-        return this._symbols.get(name)
-    }
-
-    add(symbol: ISymbol) {
-        this._symbols.set(symbol.getName(), symbol)
-    }
-
-    remove(name: string) {
-        this._symbols.delete(name)
-        return this
-    }
-
-    toString(): string {
-        let ss = ''
-        for (const entry of this._symbols) {
-            ss += `  ${entry[0]} : ${entry[1].value.toString()}\n`
-        }
-        return ss
-    }
+    contains(name: string): boolean { return this._symbols.has(name) }
+    get(name: string): ISymbol { return this._symbols.get(name) }
+    add(symbol: ISymbol) { this._symbols.set(symbol.getName(), symbol) }
+    remove(name: string) { this._symbols.delete(name); return this }
+    toString(): string { return Array.from(this._symbols.keys()).map(id => `  ${id} : ${this._symbols.get(id).value.toString()}`).join('\n') }
 }
 
 export class ScopeProvider {
     private _scopes: Scope[]
 
-    constructor(scopes: Scope[]) {
-        this._scopes = scopes
-    }
+    constructor(scopes: Scope[]) { this._scopes = scopes }
 
-    derive(scope): ScopeProvider {
-        return new ScopeProvider([...this._scopes, scope])
-    }
+    // derive(scope): ScopeProvider { return new ScopeProvider([...this._scopes, scope]) }
+
+    derive(): ScopeProvider { return new ScopeProvider([...this._scopes]) }
 
     contains(name: string): boolean {
         for (let i = this._scopes.length - 1; i > -1; i--) {
@@ -95,33 +83,6 @@ export class ScopeProvider {
     }
 }
 
-export class ISymbol {
-    private _id: string = null
-
-    private _value: IValue = null
-
-    constructor(id: string, value: IValue) {
-        this._id = id
-        this.value = value
-    }
-
-    getName(): string {
-        return this._id
-    }
-
-    get value() {
-        return this._value
-    }
-
-    set value(value: IValue) {
-        this._value = value
-    }
-
-    toString() {
-        return this._id + " : " + this._value?.toString()
-    }
-}
-
 export class Organizer {
     private _globalScope: Scope = new Scope()
 
@@ -153,3 +114,8 @@ export class Organizer {
         return this
     }
 }
+
+
+// export class ScopeSpace {
+//     private _scopes: Map<string, ISymbol>[] = []
+// }

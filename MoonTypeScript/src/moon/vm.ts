@@ -1,208 +1,66 @@
 // vm: program flow
-
-import {
-    Expression,
-    BlockStatement,
-    BreakStatement,
-    ContinueStatement,
-    ForStatement,
-    FunctionDeclaration,
-    IfStatement,
-    ReturnStatement,
-    WhileStatement,
-} from "./psi.js";
+import * as psi from "./psi.js"
+import {BuiltinFunctionValue, CallableValue, Executor, IValue, ValueSystem} from "./valuesystem.js";
+import {ISymbol, Organizer, ScopeProvider} from "./scope.js";
 import {Evaluator} from "./eval.js";
-import {ISymbol, ScopeProvider} from "./scope.js";
-import {IValue, ValueSystem} from "./valuesystem.js";
-
-// here, build linear bytecode
-// build code flow by psi(function&statement)
-// code flow supported by state/virtual machine
-
-
+import {PsiBuilder} from "./ast.js";
 /**
  * The definition of bytecode is so heavy!
  * @todo: Replace the original bytecode class by real bytecode!
  */
-
-
-export interface Bytecode {
-    toString(): string;
+abstract class Bytecode {
+    abstract toString(): string;
+}
+class BtcGoto implements Bytecode {
+    constructor(readonly tag: string) {}
+    toString(): string { return `goto ${this.tag}` }
+}
+class BtcTest implements Bytecode {
+    constructor(readonly expression: psi.Expression, readonly tag: string) { }
+    toString(): string { return `goto ${this.tag}, test ${this.expression.toString()}` }
+}
+class BtcEval implements Bytecode {
+    constructor(readonly expression: psi.Expression) { }
+    toString(): string { return `eval ${this.expression.toString()}` }
+}
+class BtcRet implements Bytecode {
+    constructor(readonly expression: psi.Expression) { }
+    toString(): string { return `ret ${this.expression.toString()}` }
+}
+class BtcMark implements Bytecode {
+    constructor(readonly tag: string) { }
 }
 
-export class BtcGoto implements Bytecode {
-    tag: string;
-
-    toString(): string {
-        return `goto ${this.tag}`
-    }
-
-    static build(l: string) {
-        const _r = new BtcGoto
-        _r.tag = l
-        return _r
-    }
-}
-
-export class BtcTest implements Bytecode {
-    expression: Expression;
-    tag: string;
-
-    toString(): string {
-        return `goto ${this.tag}, test ${this.expression.toString()}`
-    }
-
-    static build(e: Expression, l: string) {
-        const _r = new BtcTest
-        _r.expression = e
-        _r.tag = l
-        return _r
-    }
-}
-
-export class BtcEval implements Bytecode {
-    expression: Expression;
-
-    toString(): string {
-        return `eval ${this.expression.toString()}`
-    }
-
-    static build(e: Expression) {
-        const _r = new BtcEval
-        _r.expression = e
-        return _r
-    }
-}
-
-export class BtcRet implements Bytecode {
-    expression: Expression;
-
-    toString(): string {
-        return `ret ${this.expression.toString()}`
-    }
-
-    static build(e: Expression) {
-        const _r = new BtcRet
-        _r.expression = e
-        return _r
-    }
-}
-
-export class BtcMark implements Bytecode {
-    tag: string;
-
-    static build(l: string) {
-        const _r = new BtcMark
-        _r.tag = l
-        return _r
-    }
-}
-
-export class BytecodeCompiler {
+class Compiler {
     private _bytecodes: Bytecode[] = []
+    private _localLabelCount: number = 0
+    private _localLabelRecordStack: Record<string, any>[] = []
 
-    private _stack: Record<string, any>[] = []
+    getBytecodes(): Bytecode[] { return this._bytecodes }
 
-    private _theUsedLblIdx: Map<string, number> = new Map
+    reset() { this._bytecodes = []; this._localLabelCount = 0; this._localLabelRecordStack = []; return this }
 
-    private static _lblCount: number = 0
-
-    private _csip: number
-
-    // constructor(readonly evaluator: Evaluator) {
-    // }
-
-    bytecode(): Bytecode[] {
-        return this._bytecodes
-    }
-
-    compile(func: FunctionDeclaration) {
-        const [lc_0] = this.lbl()
-        this._stack.push({type: 'function', end: lc_0})
-        this.handleBlockStatement(func.body)
-        this.emitMark(lc_0)
-        this._stack.pop()
-        this.optimize()
+    compile(func: psi.FunctionDeclaration) {
+        this.handleFunctionDeclaration(func)
         return this
     }
 
-    // private _riskCount: number = 0;
-
-    interpret(evaluator: Evaluator): IValue { // jit
-        this._csip = -1
-        // this._riskCount = 0
-        while (1) {
-            // this._riskCount++
-            // if (this._riskCount > 100) {
-            //     throw new Error(`vm risk`)
-            // }
-            const btc = this.next()
-            if (!btc)
-                break
-            if (btc instanceof BtcEval) {
-                // console.debug(`[LANG] eval`, btc.expression.toString())
-                evaluator.evaluate(btc.expression)
-                continue
-            }
-            if (btc instanceof BtcTest) {
-                const r = evaluator.evaluate(btc.expression)
-                // console.debug(`[LANG] test`, btc.expression.toString(), "=>", r.toString())
-                if (!ValueSystem.isTrue(r)) {
-                    this._csip = this._theUsedLblIdx.get(btc.tag)
-                }
-                continue
-            }
-            if (btc instanceof BtcRet) {
-                return btc.expression ? evaluator.evaluate(btc.expression) : null
-            }
-        }
-        return null
+    private handleFunctionDeclaration(func: psi.FunctionDeclaration) {
+        const [lc_0] = this.allocate()
+        this._localLabelRecordStack.push({type: 'function', end: lc_0})
+        this.handleBlockStatement(func.body)
+        this.emitMark(lc_0)
+        this._localLabelRecordStack.pop()
     }
 
-    private next(): Bytecode {
-        if (!this._bytecodes.length) return null
-        let btc: Bytecode = null
-        while (1) {
-            if (this._csip + 1 >= this._bytecodes.length)
-                break
-            btc = this._bytecodes[++this._csip]
-            if (!btc)
-                break
-            if (btc instanceof BtcMark)
-                continue
-            if (btc instanceof BtcGoto) {
-                this._csip = this._theUsedLblIdx.get(btc.tag)
-                continue
-            }
-            break
-        }
-        return btc
-    }
-
-    private optimize() {
-        // TODO: more optimization:
-        //       1. remove useless label
-        //       2. optimize code flow
-        const _r: Bytecode[] = []
-        for (const bc of this._bytecodes) {
-            if (bc instanceof BtcMark && !this._theUsedLblIdx.has(bc.tag))
-                continue
-            if (bc instanceof BtcMark && this._theUsedLblIdx.has(bc.tag)) {
-                this._theUsedLblIdx.set(bc.tag, _r.length)
-            }
-            _r.push(bc)
-        }
-        this._bytecodes = _r
-    }
-
-    private handleIfStatement(stmt: IfStatement) {
-        const [lc_0, lc_1] = this.lbl(2)
+    private handleIfStatement(stmt: psi.IfStatement) {
+        const [lc_0, lc_1] = this.allocate(2)
         this.emitTest(lc_0, stmt.test)
         this.handleBlockStatement(stmt.consequent)
         this.emitGoto(lc_1)
         this.emitMark(lc_0)
         if (stmt.alternate !== null) {
-            if (stmt.alternate instanceof IfStatement) {
+            if (stmt.alternate instanceof psi.IfStatement) {
                 this.handleIfStatement(stmt.alternate)
             } else {
                 this.handleBlockStatement(stmt.alternate)
@@ -211,36 +69,36 @@ export class BytecodeCompiler {
         this.emitMark(lc_1)
     }
 
-    private handleBlockStatement(stmts: BlockStatement) {
+    private handleBlockStatement(stmts: psi.BlockStatement) {
         for (let i = 0; i < stmts.body.length; i++) {
             const stmt = stmts.body[i]
-            if (stmt instanceof Expression) {
+            if (stmt instanceof psi.Expression) {
                 this.emitEval(stmt)
-            } else if (stmt instanceof BreakStatement) {
+            } else if (stmt instanceof psi.BreakStatement) {
                 this.handleBreakStatement(stmt)
-            } else if (stmt instanceof ContinueStatement) {
+            } else if (stmt instanceof psi.ContinueStatement) {
                 this.handleContinueStatement(stmt)
-            } else if (stmt instanceof ReturnStatement) {
+            } else if (stmt instanceof psi.ReturnStatement) {
                 this.handleReturnStatement(stmt)
-            } else if (stmt instanceof IfStatement) {
+            } else if (stmt instanceof psi.IfStatement) {
                 this.handleIfStatement(stmt)
-            } else if (stmt instanceof WhileStatement) {
+            } else if (stmt instanceof psi.WhileStatement) {
                 this.handleWhileStatement(stmt)
-            } else if (stmt instanceof ForStatement) {
+            } else if (stmt instanceof psi.ForStatement) {
                 this.handleForStatement(stmt)
             }
         }
     }
 
-    private handleBreakStatement(stmt: BreakStatement) {
-        const item = this.findLastLoop()
+    private handleBreakStatement(stmt: psi.BreakStatement) {
+        const item = this.getLastLoop()
         if (!item)
             throw new Error(`found none loop!`)
         this.emitGoto(item.end)
     }
 
-    private handleContinueStatement(stmt: ContinueStatement) {
-        const item = this.findLastLoop()
+    private handleContinueStatement(stmt: psi.ContinueStatement) {
+        const item = this.getLastLoop()
         if (!item)
             throw new Error(`found none loop!`)
         if (item.type === 'while') {
@@ -250,20 +108,20 @@ export class BytecodeCompiler {
         }
     }
 
-    private handleWhileStatement(stmt: WhileStatement) {
-        const [lc_0, lc_1] = this.lbl(2)
-        this._stack.push({type: 'while', test: lc_0, end: lc_1})
+    private handleWhileStatement(stmt: psi.WhileStatement) {
+        const [lc_0, lc_1] = this.allocate(2)
+        this._localLabelRecordStack.push({type: 'while', test: lc_0, end: lc_1})
         this.emitMark(lc_0)
         this.emitTest(lc_1, stmt.test)
         this.handleBlockStatement(stmt.body)
         this.emitGoto(lc_0)
         this.emitMark(lc_1)
-        this._stack.pop()
+        this._localLabelRecordStack.pop()
     }
 
-    private handleForStatement(stmt: ForStatement) {
-        const [lc_0, lc_1, lc_2] = this.lbl(3)
-        this._stack.push({type: 'for', update: lc_2, end: lc_1})
+    private handleForStatement(stmt: psi.ForStatement) {
+        const [lc_0, lc_1, lc_2] = this.allocate(3)
+        this._localLabelRecordStack.push({type: 'for', update: lc_2, end: lc_1})
         this.emitEval(stmt.init)
         this.emitMark(lc_0)
         this.emitTest(lc_1, stmt.test)
@@ -272,87 +130,152 @@ export class BytecodeCompiler {
         this.emitEval(stmt.update)
         this.emitGoto(lc_0)
         this.emitMark(lc_1)
-        this._stack.pop()
+        this._localLabelRecordStack.pop()
     }
 
-    private handleReturnStatement(stmt: ReturnStatement) {
+    private handleReturnStatement(stmt: psi.ReturnStatement) {
         if (stmt.argument !== null)
             this.emitRet(stmt.argument)
-        this.emitGoto(this._stack[0].end)
+        this.emitGoto(this._localLabelRecordStack[0].end)
     }
 
-    private emitTest(another: string, expr: Expression) {
-        this._theUsedLblIdx.set(another, -1)
-        this.append(BtcTest.build(expr, another))
-    }
+    private emitTest(another: string, expr: psi.Expression) { this._bytecodes.push(new BtcTest(expr, another)) }
 
-    private emitEval(expr: Expression) {
-        this.append(BtcEval.build(expr))
-    }
+    private emitEval(expr: psi.Expression) { this._bytecodes.push(new BtcEval(expr)) }
 
-    private emitGoto(lc: string) {
-        this._theUsedLblIdx.set(lc, -1)
-        this.append(BtcGoto.build(lc))
-    }
+    private emitGoto(lc: string) { this._bytecodes.push(new BtcGoto(lc)) }
 
-    private emitMark(lc: string) {
-        this.append(BtcMark.build(lc))
-    }
+    private emitMark(lc: string) { this._bytecodes.push(new BtcMark(lc)) }
 
-    private emitRet(expr: Expression) {
-        this.append(BtcRet.build(expr))
-    }
+    private emitRet(expr: psi.Expression) { this._bytecodes.push(new BtcRet(expr)) }
 
-    private findLastLoop() {
-        for (let i = this._stack.length - 1; i > -1; i--) {
-            const item = this._stack[i]
-            if (['while', 'for'].includes(item.type)) {
-                return item
+    private getLastLoop(): Record<string, any> { return this._localLabelRecordStack.reverse().filter(rc => ['while', 'for'].includes(rc['type']))[0] }
+
+    private allocate(n: number = 1): string[] { return new Array(n).fill('').map(_ => `.L${this._localLabelCount++}`) }
+}
+
+export class StackFrame extends Evaluator {
+    private _csip: number
+    private _scope: ScopeProvider
+    private _bytecodes: Bytecode[]
+    private _keyPoints: Map<string, number> = new Map
+    private _vm: VirtualMachine
+    setScope(scope: ScopeProvider) { this._scope =  scope; return this }
+    setBytecodes(bts: Bytecode[]) { this._bytecodes = bts; return this }
+    setVirtualMachine(vm: VirtualMachine) { this._vm = vm; return this }
+    getScope(): ScopeProvider { return this._scope; }
+    async callTrap(callee: CallableValue, ...args: IValue[]): Promise<IValue> {
+        callee.setScope(this.getScope()).setExecutor(this._vm)
+        return await callee.invoke(...args);
+    }
+    async interpret() {
+        this.analysis()
+        this._csip = -1
+        while (1) {
+            const btc = this.next()
+            if (!btc)
+                break
+            if (btc instanceof BtcEval) {
+                await this.evaluate(btc.expression)
+                continue
+            }
+            if (btc instanceof BtcTest) {
+                const r = await this.evaluate(btc.expression)
+                if (!ValueSystem.isTrue(r)) {
+                    this._csip = this._keyPoints.get(btc.tag)
+                }
+                continue
+            }
+            if (btc instanceof BtcRet ) {
+                return btc.expression ? await this.evaluate(btc.expression) : null
             }
         }
         return null
     }
-
-    private lbl(n: number = 1) {
-        const _r: string[] = []
-        let i: number = 0
-        while (i < n) {
-            _r.push(`.LC${BytecodeCompiler._lblCount++}`)
-            i++
-        }
-        return _r
+    private analysis() {
+        // TODO: more optimization:
+        //       1. remove useless label
+        //       2. optimize code flow
+        this._keyPoints.clear()
+        this._bytecodes.forEach((btc, i) => {
+            if (btc instanceof BtcGoto) { this._keyPoints.set(btc.tag, i); return }
+            if (btc instanceof BtcTest) { this._keyPoints.set(btc.tag, i); return }
+        })
+        return this
     }
-
-    private append(bytecode: Bytecode) {
-        this._bytecodes.push(bytecode)
+    private next(): Bytecode {
+        if (!this._bytecodes.length) return null
+        let btc: Bytecode = null
+        while (1) {
+            if (this._csip + 1 >= this._bytecodes.length) break
+            btc = this._bytecodes[++this._csip]
+            if (!btc) break
+            if (btc instanceof BtcMark) continue
+            if (btc instanceof BtcGoto) { this._csip = this._keyPoints.get(btc.tag); continue }
+            break
+        }
+        return btc
     }
 }
 
-export class VirtualMachine {
-    private _btc: Map<FunctionDeclaration, BytecodeCompiler> = new Map
+export class VirtualMachine implements Executor {
+    private _functions: Map<psi.FunctionDeclaration, Bytecode[]> = new Map
+    private _callstack: StackFrame[] = []
+    private _compiler: Compiler = new Compiler()
+    async execute(scope: ScopeProvider, decl: psi.FunctionDeclaration, ...args: IValue[]): Promise<IValue> {
+        if (!this._functions.has(decl))
+            this._functions.set(decl, this._compiler.reset().compile(decl).getBytecodes())
+        const bytecodes = this._functions.get(decl)
+        const stackFrame = new StackFrame().setBytecodes(bytecodes).setVirtualMachine(this).setScope(scope)
+        this._callstack.push(stackFrame)
+        scope.buildScope()
+        for (let i = 0; i < decl.params.length; i++)
+            scope.scan(new ISymbol(decl.params[i].name, args[i]))
+        const _r = await stackFrame.interpret()
+        scope.popScope()
+        this._callstack.pop()
+        return _r
+    }
+}
 
-    compile(func: FunctionDeclaration) {
-        if (this._btc.has(func)) return this
-        this._btc.set(func, new BytecodeCompiler().compile(func))
-        // this._btc.set(func, new BytecodeCompiler(this.engine.evaluator()).compile(func))
+export class ScriptEngine {
+    private _org: Organizer
+    private _vm : VirtualMachine
+    private _builder: PsiBuilder
+    private _program: psi.Program
+
+    constructor() {
+        this._builder = new PsiBuilder()
+        this._org = new Organizer()
+        this._vm = new VirtualMachine()
+    }
+
+    compile(program: string) {
+        this._program = this._builder.compile(program).program()
+        for (const decl of this._program.body) {
+            if (decl instanceof psi.FunctionDeclaration) {
+                this._org.scanFunction(decl)
+                continue
+            }
+            if (decl instanceof psi.ClassDeclaration) {
+                this._org.scanClass(decl)
+            }
+        }
         return this
     }
 
-    invoke(scope: ScopeProvider, func: FunctionDeclaration, args: IValue[]): IValue {
-        scope.buildScope()
-        for (let i = 0; i < func.params.length; i++) {
-            scope.scan(new ISymbol(func.params[i].name, args[i]))
-        }
-        const evaluator = new Evaluator(scope, this)//.setScope(scope).setVM(this)
-        if (!this._btc.has(func))
-            this.compile(func)
-        const _r = this._btc.get(func).interpret(evaluator)
-        scope.popScope()
-        return _r
-    }
+    inject(name: string, func: BuiltinFunctionValue) { this._org.setGlobalSymbol(name, func); return this }
 
-    evaluate(scope: ScopeProvider, expr: Expression): IValue {
-        const evaluator = new Evaluator(scope, this)//.setScope(scope).setVM(this)
-        return evaluator.evaluate(expr)
+    async main() {
+        let runner: psi.FunctionDeclaration = null
+        for (const decl of this._program.body) {
+            if (decl instanceof psi.FunctionDeclaration && decl.id.name === 'main') {
+                runner = decl
+                break
+            }
+        }
+        if (!runner)
+            throw new Error(`No entry function main!`)
+        return ValueSystem.valueOf(await this._vm.execute(this._org.createFunctionScope(), runner))
     }
 }

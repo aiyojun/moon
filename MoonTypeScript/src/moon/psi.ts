@@ -48,15 +48,6 @@ export class PsiElement {
     dumps(): Record<string, any> { return {start: this._textRange.start, end: this._textRange.end} }
 
     toString(): string { return "" }
-
-    static walk(el: PsiElement, onBefore: (e: PsiElement) => boolean, onAfter: (e: PsiElement) => void = null) {
-        if (!el) return
-        if (onBefore(el)) return
-        for (const child of el.children()) {
-            PsiElement.walk(child, onBefore, onAfter)
-        }
-        if (onAfter) onAfter(el)
-    }
 }
 
 export class Program extends PsiElement {
