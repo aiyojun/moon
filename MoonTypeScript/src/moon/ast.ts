@@ -89,7 +89,6 @@ export class PsiBuilder {
         parser.addErrorListener(new MoonLexerErrorListener())
         this._program = this.handleProgram(parser.program())
         this._program.mount()
-        console.info(this._program)
         return this
     }
 

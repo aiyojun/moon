@@ -1,0 +1,130 @@
+/* Copyright 2015 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. */
+@font-face {
+    font-family: "Titillium Web";
+    src: url(./titillium-web-font/TitilliumWeb-1eq2.ttf);
+}
+
+@font-face {
+    font-family: 'Roboto';
+    font-weight: 400;
+    src: url(./roboto-regular.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Roboto';
+    font-weight: 500;
+    src: url(./roboto-medium.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Roboto';
+    font-weight: 700;
+    src: url(./roboto-bold.woff2) format('woff2');
+}
+
+
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url(./JetbrainsMonoRegular-RpvmM.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: italic;
+    src: url(./JetbrainsMonoItalic-lg91X.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-weight: bold;
+    src: url(./JetbrainsMonoBold-51Xez.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: italic;
+    font-weight: bold;
+    src: url(./JetbrainsMonoBoldItalic-6YyW6.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-size: medium;
+    src: url(./JetbrainsMonoMedium-nRvBM.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: italic;
+    font-size: medium;
+    src: url(./JetbrainsMonoMediumItalic-1GDgL.woff2) format('woff2');
+}
+
+
+/* license: SIL Open Font License (OFL)
+ * link: https://www.fontspace.com/maven-pro-font-f21944 */
+
+@font-face {
+    font-family: 'Maven Pro';
+    font-style: normal;
+    font-weight: 400;
+    src: url(./MavenProRegular-97pn.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Maven Pro';
+    font-style: normal;
+    font-weight: 500;
+    src: url(./MavenProMedium-ynAe.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'Maven Pro';
+    font-style: normal;
+    font-weight: 700;
+    src: url(./MavenProBold-62vA.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: 'sketchica';
+    src: url("./Sketchica-MB4Y.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'WhereStarsShineTheBrightest';
+    src: url("./WhereStarsShineTheBrightest.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'alliance';
+    src: url("./Alliance-No-1-Regular.woff2") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'allianceExtra';
+    src: url("./Alliance-No-1-ExtraBold.woff2") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Nunito';
+    font-style: normal;
+    font-weight: normal;
+    src: url(Nunito.woff2) format('woff2');
+}
+
+@font-face {
+    font-family: Raleway;
+    src: url(Raleway-VariableFont_wght.ttf);
+}
+

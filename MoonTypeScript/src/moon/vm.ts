@@ -198,8 +198,7 @@ export class StackFrame extends Evaluator {
         //       2. optimize code flow
         this._keyPoints.clear()
         this._bytecodes.forEach((btc, i) => {
-            if (btc instanceof BtcGoto) { this._keyPoints.set(btc.tag, i); return }
-            if (btc instanceof BtcTest) { this._keyPoints.set(btc.tag, i); return }
+            if (btc instanceof BtcMark) { this._keyPoints.set(btc.tag, i); return }
         })
         return this
     }
