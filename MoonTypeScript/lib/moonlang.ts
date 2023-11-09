@@ -5308,6 +5308,20 @@ export abstract class BuiltinFunctionValue extends CallableValue {
     }
 }
 
+export class ConvenientFunctionValue extends BuiltinFunctionValue {
+    impl: Function = null
+    async invoke(...args: IValue[]): Promise<IValue> {
+        if (this.impl) {
+            const ret = this.impl(...(args.map(arg => ValueSystem.valueOf(arg))))
+            if (ret instanceof Promise) {
+                return ret.then(r => ValueSystem.buildAny(r))
+            } else {
+                return Promise.resolve(ValueSystem.buildAny(ret))
+            }
+        }
+    }
+}
+
 export class MethodValue extends CallableValue {
     constructor(private readonly clazz: ClassDeclaration, private readonly decl: FunctionDeclaration, private obj: ObjectValue) {
         super();
@@ -5387,6 +5401,13 @@ export class ValueSystem {
         if (v instanceof NumberValue) return v.value !== 0
         if (v instanceof BooleanValue) return v.value
         return false
+    }
+
+    static buildAny(v: any): IValue {
+        if (typeof v === 'boolean') return new BooleanValue(v)
+        if (typeof v === 'string') return new StringValue(v)
+        if (typeof v === 'number') return new NumberValue(v)
+        return ValueSystem.buildNull()
     }
 
     static valueOf(iv: IValue): any {
@@ -6569,6 +6590,13 @@ export class ScriptEngine {
 
     inject(name: string, func: BuiltinFunctionValue) {
         this._org.setGlobalSymbol(name, func);
+        return this
+    }
+
+    builtin(name: string, impl: Function) {
+        const fn = new ConvenientFunctionValue()
+        fn.impl = impl
+        this._org.setGlobalSymbol(name, fn)
         return this
     }
 

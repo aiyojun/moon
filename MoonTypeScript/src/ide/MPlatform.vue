@@ -8,7 +8,7 @@ import LOGO from "../../moon.svg"
 import {onMounted, reactive, ref} from "vue";
 import SvgOf from "./SvgOf.vue";
 import {BuiltinFunctionValue, IValue} from "../moon/valuesystem";
-import MultiWindow from "./MultiWindow.vue";
+import HSliderWindows from "./HSliderWindows.vue";
 
 const editor = ref<HTMLDivElement>()
 const logger = ref<HTMLDivElement>()
@@ -110,17 +110,13 @@ onMounted(() => {
           <SvgOf name="terminal" color="skyblue"/>
         </div>
         <div class="icon icon-hover" @click="clearLog">
-<!--             style="margin-right: .5rem;">-->
           <SvgOf name="erase" color="skyblue"/>
         </div>
-<!--        <div class="icon icon-hover" @click="switchWindow">-->
-<!--          <SvgOf name="rotate" color="darkseagreen"/>-->
-<!--        </div>-->
       </div>
     </div>
     <div class="main">
-      <MultiWindow :ratio="0.75" :direction="ide.direction" :key="ide.direction">
-        <template #win0>
+      <HSliderWindows :percent=".75">
+        <template #one>
           <div class="ide v-flex" key="editor">
             <div style="height: 100%;">
               <div ref="editor" style="height: 100%;">
@@ -128,12 +124,12 @@ onMounted(() => {
             </div>
           </div>
         </template>
-        <template #win1>
+        <template #two>
           <div class="log" ref="logger" key="logger">
 
           </div>
         </template>
-      </MultiWindow>
+      </HSliderWindows>
     </div>
     <div class="footer between-flex colored-bar">
       <div>Moonlang coding platform</div>
@@ -146,7 +142,7 @@ onMounted(() => {
 
 @import "../fonts/fonts-support.css";
 
-.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #272727; overflow: hidden; }
+.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1e1f22; overflow: hidden; }
 .v-flex { display: flex; flex-direction: column; }
 .v-flex>* { width: 100%; }
 .between-flex { display: flex; justify-content: space-between; align-items: center; }
@@ -154,7 +150,7 @@ onMounted(() => {
 .footer { height: 2rem; box-sizing: border-box; padding: 0 1rem; color: #aaa; font-size: .75rem; font-family: "Titillium Web", sans-serif; }
 .main { height: calc(100% - 3rem - 2rem); display: flex; position: relative; }
 .main>div { height: 100%; }
-.colored-bar { background: #333; }
+.colored-bar { background: #2b2d30; }
 .icon { width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border-radius: 6px; }
 .icon>* { width: 75%; height: 75%; }
 
